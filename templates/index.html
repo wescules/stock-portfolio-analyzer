@@ -47,7 +47,6 @@
     <button onclick="changeRange('1Y')">1Y</button>
     <button onclick="changeRange('ALL')">ALL</button>
 </div>
-
 <script>
 let fullData = [];
 
@@ -69,7 +68,15 @@ function drawChart(seriesData) {
             type: 'area',
             height: 400,
             zoom: { enabled: true },
-            toolbar: { show: false }
+            toolbar: { show: false },
+            stacked: false,
+
+        },
+        toolbar: {
+            autoSelected: 'zoom'
+          },
+          dataLabels: {
+          enabled: false
         },
         series: [{
             name: 'Equity Value',
@@ -82,6 +89,8 @@ function drawChart(seriesData) {
                     year: 'yyyy',
                     month: "MMM 'yy",
                     day: 'dd MMM',
+                    hour: "HH:mm",
+                    minute: "HH:mm",
                 }
             }
         },
@@ -91,7 +100,7 @@ function drawChart(seriesData) {
             }
         },
         tooltip: {
-            x: { format: 'MMM dd, yyyy' },
+            x: { format: 'MMM dd, yyyy HH:mm' },
             y: {
                 formatter: val => `$${val.toFixed(2)}`
             }
@@ -115,13 +124,13 @@ function drawChart(seriesData) {
     chart = new ApexCharts(document.querySelector("#chart"), options);
     chart.render();
 }
-
 function changeRange(range) {
     const now = new Date();
     let from;
 
     if (range === '1D' || range === '5D') {
-        fetch('/api/equity/intraday')
+        url = range === '1D' ? '/api/equity/intraday?days=1&interval=1m' : '/api/equity/intraday?days=7&interval=30m'
+        fetch(url)
             .then(res => res.json())
             .then(data => {
                 const cutoff = range === '1D'
