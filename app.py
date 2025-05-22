@@ -4,6 +4,7 @@ import time
 import yfinance as yf
 import pandas as pd
 import googlefinance
+import json
 
 app = Flask(__name__)
 
@@ -59,8 +60,14 @@ for date in data.index:
         except KeyError:
             continue  # handle missing data
     equity_history.append({"time": int(pd.Timestamp(date).timestamp()), "equity": round(total_equity, 2)})
-    print(int(pd.Timestamp(date).timestamp()))
-    print(total_equity)
+
+def save_equity_history(equity_history):
+    with open("equity_history.json", "w") as f:
+        json.dump(equity_history, f, indent=2)
+        
+def read_equity_history(equity_history):
+    with open("equity_history.json") as f:
+        return json.load(f)
 
 @app.route('/')
 def index():
@@ -96,32 +103,32 @@ def equity():
 
 @app.route('/api/equity/intraday')
 def intraday_equity():
-    now = int(time.time())
-    one_day_ago = now - 60 * 60 * 24
-    five_days_ago = now - 60 * 60 * 24 * 5
+    days = int(request.args.get('days', 1))  # 1 or 5
+    interval = request.args.get('interval', '1m')  # '1m', '5m', '30m' etc.
 
-    interval = 60  # 1 minute
-    equity_data = []
+    end = datetime.utcnow()
+    start = end - timedelta(days=days)
 
-    for t in range(five_days_ago, now + 1, interval):
-        total_equity = 0
-        for asset in portfolio_data:
-            # Simulate high-frequency price fluctuations
-            simulated_price = asset['price'] + random.uniform(-0.5, 0.5)
-            value = simulated_price * asset['quantity']
-            total_equity += value
+    equity_points = {}
+    for asset in portfolio_data:
+        if asset['symbol'] in ['USDT', 'ETH', 'ADA']:  # skip crypto for now unless mapped
+            continue
 
-        equity_data.append({"time": t, "equity": round(total_equity, 2)})
+        ticker = yf.Ticker(asset['symbol'])
+        try:
+            hist = ticker.history(start=start, end=end, interval=interval)
+            for t, row in hist.iterrows():
+                timestamp = int(t.timestamp())
+                price = row['Close']
+                equity_points.setdefault(timestamp, 0)
+                equity_points[timestamp] += price * asset['quantity']
+        except Exception as e:
+            print(f"Failed to fetch {asset['symbol']}: {e}")
 
-    return jsonify(equity_data)
+    # Convert and sort
+    result = [{"time": ts, "equity": round(val, 2)} for ts, val in sorted(equity_points.items())]
+    return jsonify(result)
 
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-
-
-# Save to JSON or inject into Flask variable
-import json
-with open("equity_history.json", "w") as f:
-    json.dump(equity_history, f, indent=2)
