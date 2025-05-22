@@ -6,6 +6,7 @@ import numpy as np
 from dotenv import load_dotenv
 import os
 import finnhub
+import time
 
 load_dotenv()
 
@@ -70,6 +71,9 @@ class PortfolioManager:
             last_date = datetime.strptime(df.index[-1], '%Y-%m-%d').date()
             today = datetime.today().date()
             if last_date < today:
+                if 'USD' in symbol:
+                    return df
+                    
                 print("Getting latest quote from FinnHub for: " + symbol)
                 quote = client.quote(symbol=symbol)
                 ts = pd.to_datetime(quote["t"]).strftime('%Y-%m-%d')
@@ -81,7 +85,7 @@ class PortfolioManager:
                     "High": quote.get("h"),
                     "Low": quote.get("l"),
                     "Open": quote.get("o"),
-                    "Volume": quote.get("v", 1000)
+                    "Volume": quote.get("v", 1000000)
                 }])
                 new_data.set_index("Date", inplace=True)
                 if not new_data.empty:
@@ -90,7 +94,27 @@ class PortfolioManager:
             return df
         # No cache: download full period
         print("Downloading and saving 5y of price data for " + symbol)
-        df = yf.download(symbol, period=period, auto_adjust=True)
+        
+        attempt = 0
+        backoff_factor = 1.0
+        max_retries = 5
+        while attempt < max_retries:
+            try:
+                df = yf.download(symbol, period=period, auto_adjust=True)
+                # If empty or malformed, consider as failure
+                if df is None or df.empty:
+                    raise ValueError("Empty DataFrame returned")
+                break
+            except Exception as e:
+                attempt += 1
+                if attempt == max_retries:
+                    print(f"Failed to download after {max_retries} attempts: {e}")
+                    raise
+                wait = backoff_factor * (2 ** (attempt - 1))
+                print(f"Download failed (attempt {attempt}/{max_retries}): {e}")
+                print(f"Retrying in {wait:.1f} seconds...")
+                time.sleep(wait)
+
         df.to_csv(csv_path)
         return df
 
@@ -98,7 +122,7 @@ class PortfolioManager:
         syms = self.get_current_holdings().keys()
         frames = []
         for sym in syms:
-            df = self._get_price_data(sym, period)[['Close']].copy()
+            df = self._get_price_data(sym, period)[['Close']].copy().dropna()
             df.columns = pd.MultiIndex.from_product([[sym], df.columns])
             frames.append(df)
         if not frames:

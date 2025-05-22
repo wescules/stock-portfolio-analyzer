@@ -1,0 +1,74 @@
+[
+  {
+    "symbol": "VTI",
+    "quantity": 92.0149,
+    "cost_basis": 286.77,
+    "date": "2025-05-23T05:01:32.337"
+  },
+  {
+    "symbol": "VOO",
+    "quantity": 41.8308,
+    "cost_basis": 535.77,
+    "date": "2025-05-23T05:01:32.346"
+  },
+  {
+    "symbol": "V",
+    "quantity": 269.2974,
+    "cost_basis": 358.3,
+    "date": "2025-05-23T05:01:32.353"
+  },
+  {
+    "symbol": "UBER",
+    "quantity": 175.0,
+    "cost_basis": 88.67,
+    "date": "2025-05-23T05:01:32.356"
+  },
+  {
+    "symbol": "SPY",
+    "quantity": 21.155,
+    "cost_basis": 582.86,
+    "date": "2025-05-23T05:01:32.358"
+  },
+  {
+    "symbol": "HOOD",
+    "quantity": 500.0,
+    "cost_basis": 63.14,
+    "date": "2025-05-23T05:01:32.359"
+  },
+  {
+    "symbol": "RDDT",
+    "quantity": 120.0,
+    "cost_basis": 183.43,
+    "date": "2025-05-23T05:01:32.360"
+  },
+  {
+    "symbol": "MSFT",
+    "quantity": 21.3218,
+    "cost_basis": 358.19,
+    "date": "2025-05-23T05:01:32.361"
+  },
+  {
+    "symbol": "USDT-USD",
+    "quantity": 298711.14,
+    "cost_basis": 1.0,
+    "date": "2025-05-23T05:01:32.362"
+  },
+  {
+    "symbol": "ETH-USD",
+    "quantity": 1.0745,
+    "cost_basis": 2625.81,
+    "date": "2025-05-23T05:01:32.363"
+  },
+  {
+    "symbol": "ADA-USD",
+    "quantity": 1492.884029,
+    "cost_basis": 0.34,
+    "date": "2025-05-23T05:01:32.364"
+  },
+  {
+    "symbol": "BTC-USD",
+    "quantity": 0.20302474,
+    "cost_basis": 16941.42,
+    "date": "2025-05-23T05:01:32.365"
+  }
+]
