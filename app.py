@@ -5,6 +5,14 @@ import yfinance as yf
 import pandas as pd
 import googlefinance
 import json
+from datetime import datetime, timedelta
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+# Access your keys
+finnhub_key = os.getenv("FINNHUB_API_KEY")
 
 app = Flask(__name__)
 
@@ -65,7 +73,7 @@ def save_equity_history(equity_history):
     with open("equity_history.json", "w") as f:
         json.dump(equity_history, f, indent=2)
         
-def read_equity_history(equity_history):
+def read_equity_history():
     with open("equity_history.json") as f:
         return json.load(f)
 
@@ -103,8 +111,8 @@ def equity():
 
 @app.route('/api/equity/intraday')
 def intraday_equity():
-    days = int(request.args.get('days', 1))  # 1 or 5
-    interval = request.args.get('interval', '1m')  # '1m', '5m', '30m' etc.
+    days = int(requests.args.get('days', 1))  # 1 or 5
+    interval = requests.args.get('interval', '1m')  # '1m', '5m', '30m' etc.
 
     end = datetime.utcnow()
     start = end - timedelta(days=days)
