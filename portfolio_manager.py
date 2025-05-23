@@ -1,5 +1,6 @@
 import os
 import pandas as pd
+import requests
 import yfinance as yf
 from datetime import datetime, date
 import numpy as np
@@ -8,6 +9,7 @@ import os
 import finnhub
 import time
 import uuid
+from zoneinfo import ZoneInfo
 load_dotenv()
 
 finnhub_key = os.getenv("FINNHUB_API_KEY")
@@ -25,15 +27,15 @@ class PortfolioManager:
     def _load_transactions(self):
         if os.path.exists(self.tx_file):
             return pd.read_json(self.tx_file)
-        cols = ["symbol", "quantity", "cost_basis", "date"]
+        cols = ["symbol", "quantity", "cost_basis", "date", "transactionId"]
         return pd.DataFrame(columns=cols)
 
     def _save_transactions(self):
         self.transactions.to_json(self.tx_file, orient="records", date_format="iso")
 
-    def add_transaction(self, symbol: str, quantity: float, cost_basis: float, date: str = None):
+    def add_transaction(self, symbol: str, quantity: float, cost_basis: float, date: str = None, company_name: str = None):
         date = pd.to_datetime(date) if date else pd.Timestamp.now()
-        tx = {"symbol": symbol.upper(), "quantity": quantity,
+        tx = {"symbol": symbol.upper(), "quantity": quantity, "company_name": company_name,
               "cost_basis": cost_basis, "date": date, "transactionId": str(uuid.uuid4())}
         self.transactions = pd.concat([self.transactions, pd.DataFrame([tx])], ignore_index=True)
         self._save_transactions()
@@ -99,9 +101,36 @@ class PortfolioManager:
         df.to_json(csv_path)
         return df
 
+    def get_latest_crypto_price(self, ticker):
+        print("Getting latest quote from CoinGecko for: " + ticker)
+        grouped_dict = {
+            symbol: group.to_dict(orient='records')
+            for symbol, group in self.transactions.groupby('symbol')
+        }
+        coin_name = grouped_dict.get(ticker)[0]['company_name']
+        response = requests.get(f'https://api.coingecko.com/api/v3/simple/price?ids={coin_name}&vs_currencies=usd', timeout=10)
+        
+        # fallback: read from json file
+        if response.status_code != 200:
+            print("CoinGecko has failed. Using fallback and reading from file")
+            last_known_price = self._get_price_data(ticker)['Close'].iloc[-1]
+            return {'Close': last_known_price}, pd.to_datetime(date.today().isoformat())
+
+        data = response.json()
+        crypto_id, data = next(iter(data.items()))
+        price = data["usd"]
+        new_data = {
+            'Close': price
+        }
+        return new_data, pd.to_datetime(date.today().isoformat())
+        
     def get_realtime_quote(self, symbol):
+        if 'USD' in symbol:
+            return self.get_latest_crypto_price(ticker=symbol)
+        
         print("Getting latest quote from FinnHub for: " + symbol)
         quote = client.quote(symbol=symbol)
+        
         new_data = {
             'Close': quote.get("c"),
             'High': quote.get("h"),
@@ -228,15 +257,76 @@ class PortfolioManager:
         })
         return summary
 
+    def is_past_12_in_china(self):
+        now = pd.Timestamp.now()
+        ny_time = datetime.now(ZoneInfo("America/New_York"))
+        # I'm not in the US so I need this
+        return now.date() > ny_time.date()
+        
+    def get_portfolio_info(self):
+        grouped_dict = {
+            symbol: group.to_dict(orient='records')
+            for symbol, group in self.transactions.groupby('symbol')
+        }
 
-# if __name__ == '__main__':
-#     manager = PortfolioManager()
-#     manager.add_transaction(symbol="MSFT", quantity=10, cost_basis=100.1, date=None)
-#     manager.add_transaction(symbol="TSLA", quantity=20, cost_basis=202.1, date=None)
-#     manager.add_transaction(symbol="TSLA", quantity=10, cost_basis=302.1, date=None)
+        response = []
+
+        for symbol, purchases in grouped_dict.items():
+            live_price, live_date = self.get_realtime_quote(symbol)
+            price = live_price['Close']
+            
+            previous_close = self._get_price_data(symbol)['Close'].copy()
+            prev_close = previous_close.iloc[-2] if self.is_past_12_in_china() else previous_close.iloc[-1]
+
+            total_quantity = sum(p["quantity"] for p in purchases)
+            value = round(price * total_quantity, 2)
+
+            day_gain = round((price - prev_close) * total_quantity, 2) if prev_close else 0
+            day_gain_percent = round((price - prev_close) / prev_close * 100, 2) if prev_close else 0
+
+            purchases_detail = []
+            for p in purchases:
+                qty = p["quantity"]
+                basis = p["cost_basis"]
+                gain = (price - basis) * qty
+                gain_percent = ((price - basis) / basis * 100) if basis else 0
+                market_value = price * qty
+
+                purchases_detail.append({
+                    "transactionId": p["transactionId"],
+                    "date": p["date"],
+                    "purchasePrice": basis,
+                    "quantity": qty,
+                    "value": round(market_value, 2),
+                    "totalGain": round(gain, 2),
+                    "totalGainPercent": round(gain_percent, 2)
+                })
+
+            response.append({
+                "id": symbol.lower(),
+                "symbol": symbol,
+                "name": purchases[0]['company_name'],
+                "price": price,
+                "quantity": round(total_quantity, 4),
+                "dayGain": round(day_gain, 2),
+                "dayGainPercent": abs(round(day_gain_percent, 2)),
+                "value": value,
+                "purchases": purchases_detail
+            })
+
+        return response
+
+
+# TESTING CODE
+if __name__ == '__main__':
+    manager = PortfolioManager()
+    # manager.add_transaction(symbol="MSFT", quantity=10, cost_basis=100.1, date=None)
+    # manager.add_transaction(symbol="TSLA", quantity=20, cost_basis=202.1, date=None)
+    # manager.add_transaction(symbol="TSLA", quantity=10, cost_basis=302.1, date=None)
     
-#     print(manager.get_transactions(symbol="TSLA"))
-#     print(manager.portfolio_pnl())
-#     print(manager.transaction_pnl(symbol="TSLA"))
-#     print(manager.compute_equity_history())
+    # print(manager.get_transactions(symbol="TSLA"))
+    # print(manager.portfolio_pnl())
+    # print(manager.transaction_pnl(symbol="TSLA"))
+    # print(manager.compute_equity_history())
+    print(manager.get_portfolio_info())
     
