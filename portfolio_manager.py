@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 import os
 import finnhub
 import time
-
+import uuid
 load_dotenv()
 
 finnhub_key = os.getenv("FINNHUB_API_KEY")
@@ -34,7 +34,7 @@ class PortfolioManager:
     def add_transaction(self, symbol: str, quantity: float, cost_basis: float, date: str = None):
         date = pd.to_datetime(date) if date else pd.Timestamp.now()
         tx = {"symbol": symbol.upper(), "quantity": quantity,
-              "cost_basis": cost_basis, "date": date}
+              "cost_basis": cost_basis, "date": date, "transactionId": str(uuid.uuid4())}
         self.transactions = pd.concat([self.transactions, pd.DataFrame([tx])], ignore_index=True)
         self._save_transactions()
 
@@ -54,43 +54,23 @@ class PortfolioManager:
     def _read_cached_csv(self, csv_path: str) -> pd.DataFrame:
         """Read CSV with potential multi-index headers and flatten columns"""
         try:
-            # Attempt to read multi-index header
-            df = pd.read_csv(csv_path, parse_dates=True)
-            df.columns = ['Date', "Close", "High", "Low", "Open", "Volume"]
-            df = df.iloc[2:].reset_index(drop=True)
-            df = df.set_index("Date", drop=True)
+            df = pd.read_json(csv_path)
         except (ValueError, pd.errors.ParserError):
             # Fallback for single-level header
-            df = pd.read_csv(csv_path, index_col='Date', parse_dates=True)
+            df = pd.read_json(csv_path)
         return df
 
     def _get_price_data(self, symbol: str, period: str = "5y") -> pd.DataFrame:
-        csv_path = os.path.join(self.data_dir, f"{symbol}.csv")
+        csv_path = os.path.join(self.data_dir, f"{symbol}.json")
         if os.path.exists(csv_path):
             df = self._read_cached_csv(csv_path)
-            last_date = datetime.strptime(df.index[-1], '%Y-%m-%d').date()
-            today = datetime.today().date()
-            if last_date < today:
-                if 'USD' in symbol:
-                    return df
-                    
-                print("Getting latest quote from FinnHub for: " + symbol)
-                quote = client.quote(symbol=symbol)
-                ts = pd.to_datetime(quote["t"]).strftime('%Y-%m-%d')
-                
-                # Build DataFrame
-                new_data = pd.DataFrame([{
-                    "Date": date.today().isoformat(),
-                    "Close": quote.get("c"),
-                    "High": quote.get("h"),
-                    "Low": quote.get("l"),
-                    "Open": quote.get("o"),
-                    "Volume": quote.get("v", 1000000)
-                }])
-                new_data.set_index("Date", inplace=True)
-                if not new_data.empty:
-                    df = pd.concat([df, new_data[~new_data.index.isin(df.index)]])
-                    df.to_csv(csv_path)
+            # last_date = pd.to_datetime(df.index[-1]).date()
+            # today = datetime.today().date()
+            # if last_date < today:
+            #     if 'USD' in symbol: # ignore crypto for now
+            #         return df
+            #     new_data, new_index = self.get_realtime_quote(symbol)
+            #     df.loc[new_index] = new_data
             return df
         # No cache: download full period
         print("Downloading and saving 5y of price data for " + symbol)
@@ -100,10 +80,10 @@ class PortfolioManager:
         max_retries = 5
         while attempt < max_retries:
             try:
-                df = yf.download(symbol, period=period, auto_adjust=True)
+                df = yf.Ticker(symbol).history(period=period, auto_adjust=False)
                 # If empty or malformed, consider as failure
                 if df is None or df.empty:
-                    raise ValueError("Empty DataFrame returned")
+                    raise ValueError("Empty DataFrame returned while trying to download")
                 break
             except Exception as e:
                 attempt += 1
@@ -115,19 +95,34 @@ class PortfolioManager:
                 print(f"Retrying in {wait:.1f} seconds...")
                 time.sleep(wait)
 
-        df.to_csv(csv_path)
+        # df.to_csv(csv_path)
+        df.to_json(csv_path)
         return df
+
+    def get_realtime_quote(self, symbol):
+        print("Getting latest quote from FinnHub for: " + symbol)
+        quote = client.quote(symbol=symbol)
+        new_data = {
+            'Close': quote.get("c"),
+            'High': quote.get("h"),
+            'Low': quote.get("l"),
+            'Open': quote.get("o"),
+            'Volume': 3000000
+        }
+
+        index = pd.to_datetime(date.today().isoformat())
+        return new_data, index
 
     def _load_all_price_data(self, period: str = "5y") -> pd.DataFrame:
         syms = self.get_current_holdings().keys()
         frames = []
         for sym in syms:
-            df = self._get_price_data(sym, period)[['Close']].copy().dropna()
-            df.columns = pd.MultiIndex.from_product([[sym], df.columns])
+            df = self._get_price_data(sym, period)[['Close']].copy()
+            df = df.rename(columns={"Close": sym})
             frames.append(df)
         if not frames:
             return pd.DataFrame()
-        data = pd.concat(frames, axis=1).sort_index().dropna()
+        data = pd.concat(frames, axis=1).sort_index().fillna(0)
         return data
 
     def compute_equity_history(self, period: str = "5y") -> pd.DataFrame:
@@ -139,16 +134,41 @@ class PortfolioManager:
             total_equity = 0
             for symbol, quantity in self.get_current_holdings().items():
                 try:
-                    if symbol in ["ETH-USD", "ADA-USD"]:
-                        price = price_data[symbol]["Close"][date_entry]
-                    else:
-                        price = price_data[symbol]["Close"][date_entry]
-                    total_equity += float(price) * quantity
-                except KeyError:
-                    continue  # handle missing data
+                    price = price_data[symbol][datetime.strftime(date_entry, '%Y-%m-%d')]
+                    total_equity += float(price.iloc[0]) * quantity
+                except KeyError as e:
+                    raise Exception(e)
             equity_history.append({"time": int(pd.Timestamp(date_entry).timestamp()), "equity": round(total_equity, 2)})
             
         return equity_history
+    
+    #TODO: optimize this function:
+    # def compute_equity_history(self, period: str = "5y") -> list[dict]:
+    #     price_data = self._load_all_price_data(period)
+
+    #     # Ensure datetime index is sorted and standardized
+    #     price_data.index = pd.to_datetime(price_data.index)
+
+    #     # Cache current holdings
+    #     holdings = self.get_current_holdings()
+
+    #     # Only keep columns for current holdings
+    #     price_data = price_data[list(holdings.keys())]
+
+    #     # Multiply each column by the quantity held
+    #     for symbol, qty in holdings.items():
+    #         price_data[symbol] = price_data[symbol] * qty
+
+    #     # Sum across columns (each row is total equity on that date)
+    #     price_data['equity'] = price_data.sum(axis=1)
+
+    #     # Return as list of dicts with timestamp
+    #     equity_history = [
+    #         {"time": int(ts.timestamp()), "equity": round(equity, 2)}
+    #         for ts, equity in zip(price_data.index, price_data['equity'])
+    #     ]
+
+    #     return equity_history
 
 
     def transaction_pnl(self, symbol: str = None) -> pd.DataFrame:
@@ -160,7 +180,7 @@ class PortfolioManager:
         for _, tx in txs.iterrows():
             sym = tx['symbol']
             if sym not in current_prices:
-                current_prices[sym] = self._get_price_data(sym)['Close'].iloc[-1]
+                current_prices[sym] = self._get_price_data(sym)[['Close']].iloc[-1]
             price = current_prices[sym]
             qty = tx['quantity']
             cost = tx['cost_basis'] * qty
@@ -182,8 +202,9 @@ class PortfolioManager:
             return {}
         total_qty = txs['quantity'].sum()
         total_cost = (txs['quantity'] * txs['cost_basis']).sum()
-        price = self._get_price_data(symbol)['Close'].iloc[-1]
-        market_value = float(price) * total_qty
+        price = self._get_price_data(symbol)[['Close']].iloc[-1]
+
+        market_value = float(price.iloc[0]) * total_qty
         pnl = market_value - total_cost
         return {
             'symbol': symbol,
