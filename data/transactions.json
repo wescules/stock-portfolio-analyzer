@@ -1,1 +1,110 @@
-[{"symbol":"VTI","quantity":92.0149,"cost_basis":286.77,"date":"2025-05-24T05:48:03.358","transactionId":"bc7a25e2-ce27-4d9e-ad20-d30f779bc6b0","company_name":"VTI INSTRUMENTS"},{"symbol":"VOO","quantity":41.8308,"cost_basis":535.77,"date":"2025-05-24T05:48:03.362","transactionId":"5224ca17-6494-4618-842c-633676ae8f1e","company_name":"VOO INDEX"},{"symbol":"V","quantity":269.2974,"cost_basis":358.3,"date":"2025-05-24T05:48:03.362","transactionId":"fb1242a1-5dc3-4b4a-a30b-192fa436efce","company_name":"VISA"},{"symbol":"UBER","quantity":175.0,"cost_basis":88.67,"date":"2025-05-24T05:48:03.364","transactionId":"d1adc51d-439a-4562-b370-81314753fd31","company_name":"UBER"},{"symbol":"SPY","quantity":21.155,"cost_basis":582.86,"date":"2025-05-24T05:48:03.365","transactionId":"7f3cac84-314d-4b25-a50f-94bf370f909f","company_name":"SPY INDEX"},{"symbol":"HOOD","quantity":500.0,"cost_basis":63.14,"date":"2025-05-24T05:48:03.366","transactionId":"e5db1525-89a4-4609-b89e-7666b6a3c766","company_name":"ROBINHOOD"},{"symbol":"RDDT","quantity":120.0,"cost_basis":183.43,"date":"2025-05-24T05:48:03.368","transactionId":"3b9587c8-da6a-4a5c-b771-4385fdbf09be","company_name":"REDDIT"},{"symbol":"MSFT","quantity":21.3218,"cost_basis":358.19,"date":"2025-05-24T05:48:03.369","transactionId":"abbb43ef-e17c-4a61-9587-22fb596cd7ec","company_name":"MICROSOFT"},{"symbol":"USDT-USD","quantity":298711.14,"cost_basis":1.0,"date":"2025-05-24T05:48:03.370","transactionId":"2384c254-16d3-4c99-9595-9d9f52405d9e","company_name":"TETHER"},{"symbol":"ETH-USD","quantity":1.0745,"cost_basis":2625.81,"date":"2025-05-24T05:48:03.371","transactionId":"1b15fdb6-adb3-4a5a-a523-6af31d18c535","company_name":"ETHEREUM"},{"symbol":"ADA-USD","quantity":1492.884029,"cost_basis":0.34,"date":"2025-05-24T05:48:03.372","transactionId":"b1e0ce88-8f59-455d-9a8a-ed7d4de29d11","company_name":"CARDANO"},{"symbol":"BTC-USD","quantity":0.20302474,"cost_basis":16941.42,"date":"2025-05-24T05:48:03.373","transactionId":"382c3bcf-df5b-40e4-9ca9-9814c52f7085","company_name":"BITCOIN"},{"symbol":"META","quantity":248.2124,"cost_basis":172.6,"date":"2025-05-24T00:00:00.000","transactionId":"16447af4-ef83-42bd-a47a-3a2c1d73424e","company_name":"META PLATFORMS INC-CLASS A"}]
+[
+  {
+    "symbol": "VTI",
+    "quantity": 92.0149,
+    "cost_basis": 286.77,
+    "date": "2025-05-24T13:06:24.354",
+    "transactionId": "625aef7d-d4a6-4c41-886d-e6f7cd468a5f",
+    "company_name": "VTI INSTRUMENTS",
+    "type": "ETF"
+  },
+  {
+    "symbol": "VOO",
+    "quantity": 41.8308,
+    "cost_basis": 535.77,
+    "date": "2025-05-24T13:06:24.361",
+    "transactionId": "dfc5cc62-746e-4424-ac91-cbe73f6440e4",
+    "company_name": "VOO INDEX",
+    "type": "ETF"
+  },
+  {
+    "symbol": "V",
+    "quantity": 269.2974,
+    "cost_basis": 358.3,
+    "date": "2025-05-24T13:06:24.364",
+    "transactionId": "52fcf5ac-4871-4226-b20f-13ca1507f125",
+    "company_name": "VISA",
+    "type": "STOCK"
+  },
+  {
+    "symbol": "UBER",
+    "quantity": 175.0,
+    "cost_basis": 88.67,
+    "date": "2025-05-24T13:06:24.367",
+    "transactionId": "e8234d7b-2b7f-48a5-a2de-cfa6275fdeb5",
+    "company_name": "UBER",
+    "type": "STOCK"
+  },
+  {
+    "symbol": "SPY",
+    "quantity": 21.155,
+    "cost_basis": 582.86,
+    "date": "2025-05-24T13:06:24.369",
+    "transactionId": "884e30de-b920-44b9-b7e4-256310990754",
+    "company_name": "SPY INDEX",
+    "type": "ETF"
+  },
+  {
+    "symbol": "HOOD",
+    "quantity": 500.0,
+    "cost_basis": 63.14,
+    "date": "2025-05-24T13:06:24.371",
+    "transactionId": "972cf60f-abc3-4af9-8ac7-186532b75e10",
+    "company_name": "ROBINHOOD",
+    "type": "STOCK"
+  },
+  {
+    "symbol": "RDDT",
+    "quantity": 120.0,
+    "cost_basis": 183.43,
+    "date": "2025-05-24T13:06:24.372",
+    "transactionId": "ec074795-808b-4ca6-91d0-e9d1f02c8d5c",
+    "company_name": "REDDIT",
+    "type": "STOCK"
+  },
+  {
+    "symbol": "MSFT",
+    "quantity": 21.3218,
+    "cost_basis": 358.19,
+    "date": "2025-05-24T13:06:24.374",
+    "transactionId": "5987a3d4-0580-467d-8162-3040a6158005",
+    "company_name": "MICROSOFT",
+    "type": "STOCK"
+  },
+  {
+    "symbol": "USDT-USD",
+    "quantity": 298711.14,
+    "cost_basis": 1.0,
+    "date": "2025-05-24T13:06:24.376",
+    "transactionId": "85d5bfc6-32d0-4382-8b7d-0e0e5eb54ff7",
+    "company_name": "CASH",
+    "type": "CASH"
+  },
+  {
+    "symbol": "ETH-USD",
+    "quantity": 1.0745,
+    "cost_basis": 2625.81,
+    "date": "2025-05-24T13:06:24.377",
+    "transactionId": "56cad93b-ce25-4803-9317-9e92ba715cc1",
+    "company_name": "ETHEREUM",
+    "type": "CRYPTO"
+  },
+  {
+    "symbol": "ADA-USD",
+    "quantity": 1492.884029,
+    "cost_basis": 0.34,
+    "date": "2025-05-24T13:06:24.379",
+    "transactionId": "afa576fe-407c-4fcb-b0cd-223be5878579",
+    "company_name": "CARDANO",
+    "type": "CRYPTO"
+  },
+  {
+    "symbol": "BTC-USD",
+    "quantity": 0.20302474,
+    "cost_basis": 16941.42,
+    "date": "2025-05-24T13:06:24.380",
+    "transactionId": "42d5b3af-c44b-48f2-b1b7-743dc59427c8",
+    "company_name": "BITCOIN",
+    "type": "CRYPTO"
+  }
+]

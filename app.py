@@ -5,7 +5,7 @@ import pandas as pd
 from portfolio_data_manager import PortfolioDataManager
 import finnhub
 import os
-
+import requests
 from portfolio_manager import PortfolioManager
 
 app = Flask(__name__)
@@ -28,11 +28,31 @@ def equity():
     equity_history = manager.compute_equity_history()
     return jsonify(equity_history)
 
+def search_coins(query):
+    url = f"https://api.coingecko.com/api/v3/search?query={query}"
+    response = requests.get(url, timeout=10)
+    data = response.json().get('coins', [])
+    
+    result = []
+    for coin in data:
+        result.append({
+            "description": coin.get("name", "").upper(),  # name of the coin
+            "displaySymbol": coin.get("id", "").upper(),  # shorthand like BTC
+            "symbol": coin.get("symbol", "").upper(),  # CoinGecko's unique ID
+            "type": "Crypto"  # Custom type field
+        })
+        if len(result) > 4:
+            return result
+    
+    return result
+
+
 @app.route('/api/symbolSuggestion')
 def fetchSymbolSuggestions():
     typed_chars = request.args.get('q', '')
-    sugggestions = finnhub_client.symbol_lookup(typed_chars)
-    return jsonify(sugggestions)
+    finnhub_sugggestions = finnhub_client.symbol_lookup(typed_chars)
+    crypto_suggestions = search_coins(typed_chars)
+    return jsonify(finnhub_sugggestions['result'] + crypto_suggestions)
 
 @app.route('/api/equity/intraday')
 def intraday_equity():
@@ -89,19 +109,18 @@ def intraday_equity():
 
 
 if __name__ == '__main__':
-    # manager.add_transaction(symbol="VTI", quantity=92.0149, cost_basis=286.77, date=None, company_name="VTI INSTRUMENTS")
-    # manager.add_transaction(symbol="VOO", quantity=41.8308, cost_basis=535.77, date=None, company_name="VOO INDEX")
-    # manager.add_transaction(symbol="V", quantity=269.2974, cost_basis=358.30, date=None, company_name="VISA")
+    # manager.add_transaction(symbol="VTI", quantity=92.0149, cost_basis=286.77, date=None, company_name="VTI INSTRUMENTS", type="ETF")
+    # manager.add_transaction(symbol="VOO", quantity=41.8308, cost_basis=535.77, date=None, company_name="VOO INDEX", type="ETF")
+    # manager.add_transaction(symbol="V", quantity=269.2974, cost_basis=358.30, date=None, company_name="VISA", type="STOCK")
     
-    # manager.add_transaction(symbol="UBER", quantity=175, cost_basis=88.67, date=None, company_name="UBER")
-    # manager.add_transaction(symbol="SPY", quantity=21.155, cost_basis=582.86, date=None, company_name="SPY INDEX")
-    # manager.add_transaction(symbol="HOOD", quantity=500, cost_basis=63.14, date=None, company_name="ROBINHOOD")
-    # manager.add_transaction(symbol="RDDT", quantity=120, cost_basis=183.43, date=None, company_name="REDDIT")
-    # manager.add_transaction(symbol="MSFT", quantity=21.3218, cost_basis=358.19, date=None, company_name="MICROSOFT")
-    # manager.add_transaction(symbol="USDT-USD", quantity=298711.14, cost_basis=1.00, date=None, company_name="CASH")
-    # manager.add_transaction(symbol="ETH-USD", quantity=1.0745, cost_basis=2625.81, date=None, company_name="ETHEREUM")
-    # manager.add_transaction(symbol="ADA-USD", quantity=1492.884029, cost_basis=0.34, date=None, company_name="CARDANO")
-    # manager.add_transaction(symbol="BTC-USD", quantity=0.20302474, cost_basis=16941.42, date=None, company_name="BITCOIN")
+    # manager.add_transaction(symbol="UBER", quantity=175, cost_basis=88.67, date=None, company_name="UBER", type="STOCK")
+    # manager.add_transaction(symbol="SPY", quantity=21.155, cost_basis=582.86, date=None, company_name="SPY INDEX", type="ETF")
+    # manager.add_transaction(symbol="HOOD", quantity=500, cost_basis=63.14, date=None, company_name="ROBINHOOD", type="STOCK")
+    # manager.add_transaction(symbol="RDDT", quantity=120, cost_basis=183.43, date=None, company_name="REDDIT", type="STOCK")
+    # manager.add_transaction(symbol="MSFT", quantity=21.3218, cost_basis=358.19, date=None, company_name="MICROSOFT", type="STOCK")
+    # manager.add_transaction(symbol="USDT-USD", quantity=298711.14, cost_basis=1.00, date=None, company_name="CASH", type="CASH")
+    # manager.add_transaction(symbol="ETH-USD", quantity=1.0745, cost_basis=2625.81, date=None, company_name="ETHEREUM", type="CRYPTO")
+    # manager.add_transaction(symbol="ADA-USD", quantity=1492.884029, cost_basis=0.34, date=None, company_name="CARDANO", type="CRYPTO")
+    # manager.add_transaction(symbol="BTC-USD", quantity=0.20302474, cost_basis=16941.42, date=None, company_name="BITCOIN", type="CRYPTO")
 
     app.run(debug=True)
-    intraday_equity()

@@ -10,7 +10,8 @@ import finnhub
 import time
 import uuid
 from zoneinfo import ZoneInfo
-import pandas_market_calendars as mcal
+import websocket
+import json
 load_dotenv()
 
 finnhub_key = os.getenv("FINNHUB_API_KEY")
@@ -34,15 +35,15 @@ class PortfolioManager:
     def _save_transactions(self):
         self.transactions.to_json(self.tx_file, orient="records", date_format="iso")
 
-    def add_transaction(self, symbol: str, quantity: float, cost_basis: float, date: str = None, company_name: str = None):
+    def add_transaction(self, symbol: str, quantity: float, cost_basis: float, date: str = None, company_name: str = None, type: str = None):
         date = pd.to_datetime(date) if date else pd.Timestamp.now()
         tx = {"symbol": symbol.upper(), "quantity": quantity, "company_name": company_name,
-              "cost_basis": cost_basis, "date": date, "transactionId": str(uuid.uuid4())}
+              "cost_basis": cost_basis, "date": date, "transactionId": str(uuid.uuid4()), "type": type}
         self.transactions = pd.concat([self.transactions, pd.DataFrame([tx])], ignore_index=True)
         self._save_transactions()
         
     def remove_transaction(self, transaction_id: str):
-        index_to_delete = self.transactions[self.transactions['transactionId'] ==  transaction_id].index
+        index_to_delete = self.transactions[self.transactions['transactionId'] == transaction_id].index
         self.transactions.drop(index_to_delete, inplace=True)
         self._save_transactions()
 
@@ -84,6 +85,8 @@ class PortfolioManager:
         # No cache: download full period
         print("Downloading and saving 5y of price data for " + symbol)
         
+        if self.is_crypto_symbol(symbol) and '-USD' not in symbol:
+            symbol = symbol + '-USD'
         attempt = 0
         backoff_factor = 1.0
         max_retries = 5
@@ -130,9 +133,15 @@ class PortfolioManager:
             'Close': price
         }
         return new_data, pd.to_datetime(date.today().isoformat())
+    
+    def is_crypto_symbol(self, symbol):
+        symbol_info = self.transactions[self.transactions['symbol'] == symbol].index
+        transaction = self.transactions.iloc[symbol_info]
+        
+        return transaction['type'].iloc[0].lower() == 'crypto'
         
     def get_realtime_quote(self, symbol):
-        if 'USD' in symbol:
+        if self.is_crypto_symbol(symbol):
             return self.get_latest_crypto_price(ticker=symbol)
         
         print("Getting latest quote from FinnHub for: " + symbol)
@@ -143,7 +152,8 @@ class PortfolioManager:
             'High': quote.get("h"),
             'Low': quote.get("l"),
             'Open': quote.get("o"),
-            'Volume': 3000000
+            'percent_change': quote.get('dp'),
+            'previous_close_price': quote.get("pc"),
         }
 
         index = pd.to_datetime(date.today().isoformat())
@@ -275,18 +285,29 @@ class PortfolioManager:
 
         response = []
 
+        total_value = 0
+        total_day_gain = 0
+        total_cost_basis = 0
+        type_breakdown = {}
+
         for symbol, purchases in grouped_dict.items():
             live_price, live_date = self.get_realtime_quote(symbol)
             price = live_price['Close']
-            
-            previous_close = self._get_price_data(symbol)['Close'].copy()
-            prev_close = previous_close.iloc[-2] if self.is_past_12_in_china() else previous_close.iloc[-1]
+
+            if self.is_crypto_symbol(symbol):
+                previous_close = self._get_price_data(symbol)['Close'].copy()
+                prev_close = previous_close.iloc[-2] if self.is_past_12_in_china() else previous_close.iloc[-1]
+            else:
+                prev_close = live_price['previous_close_price']
 
             total_quantity = sum(p["quantity"] for p in purchases)
             value = round(price * total_quantity, 2)
 
             day_gain = round((price - prev_close) * total_quantity, 2) if prev_close else 0
             day_gain_percent = round((price - prev_close) / prev_close * 100, 2) if prev_close else 0
+
+            total_value += value
+            total_day_gain += day_gain
 
             purchases_detail = []
             for p in purchases:
@@ -295,6 +316,7 @@ class PortfolioManager:
                 gain = (price - basis) * qty
                 gain_percent = ((price - basis) / basis * 100) if basis else 0
                 market_value = price * qty
+                total_cost_basis += basis * qty
 
                 purchases_detail.append({
                     "transactionId": p["transactionId"],
@@ -305,6 +327,9 @@ class PortfolioManager:
                     "totalGain": round(gain, 2),
                     "totalGainPercent": round(gain_percent, 2)
                 })
+
+            category = purchases[0]['type'].lower()
+            type_breakdown[category] = type_breakdown.get(category, 0) + value
 
             response.append({
                 "id": symbol.lower(),
@@ -318,7 +343,37 @@ class PortfolioManager:
                 "purchases": purchases_detail
             })
 
-        return response
+        total_gain = total_value - total_cost_basis
+        total_gain_percent = (total_gain / total_cost_basis * 100) if total_cost_basis else 0
+
+        yesterday_value = total_value - total_day_gain
+        day_percent = (total_day_gain / yesterday_value * 100) if yesterday_value else 0
+
+        timestamp = pd.Timestamp.now(tz='Asia/Shanghai').strftime("%b %d, %I:%M:%S %p UTC+8")
+
+        portfolio_highlights = [
+            {"name": k, "percent": round(v / total_value * 100, 1), "value": round(v, 2)}
+            for k, v in type_breakdown.items()
+        ]
+
+        return {
+            "balance": round(total_value, 2),
+            "dayChange": round(total_day_gain, 2),
+            "dayPercent": round(day_percent, 2),
+            "totalGain": round(total_gain, 2),
+            "totalGainPercent": round(total_gain_percent, 2),
+            "timestamp": timestamp,
+            "portfolioHighlights": portfolio_highlights,
+            "positions": response
+        }
+
+
+
+
+
+
+
+
 
 
 # TESTING CODE
@@ -331,7 +386,42 @@ if __name__ == '__main__':
     # print(manager.get_transactions(symbol="TSLA"))
     # print(manager.portfolio_pnl())
     # print(manager.transaction_pnl(symbol="TSLA"))
-    print(manager.compute_equity_history())
+    # print(manager.compute_equity_history())
     
     # print(manager.get_portfolio_info())
+
+
+
+    # def on_message(ws, message):
+    #     data = json.loads(message)
+    #     if data["type"] == "trade":
+    #         for trade in data["data"]:
+    #             print(f"Symbol: {trade['s']} | Price: {trade['p']} | Volume: {trade['v']}")
+
+    # def on_open(ws):
+    #     for symbol in manager.get_current_holdings().keys():
+    #         ws.send(json.dumps({"type": "subscribe", "symbol": symbol}))
+    #     print("✅ Subscribed to:", [manager.get_current_holdings().keys()])
+
+    # def on_close(ws, close_status_code, close_msg):
+    #     print("🚪 WebSocket closed")
+
+    # def on_error(ws, error):
+    #     print("❌ Error:", error)
+        
+    # socket = f"wss://ws.finnhub.io?token={finnhub_key}"
+    # websocket.enableTrace(True)
+    # ws = websocket.WebSocketApp(socket,
+    #                             on_message=on_message,
+    #                             on_open=on_open,
+    #                             on_close=on_close,
+    #                             on_error=on_error)
+
+    # ws.run_forever()
+    
+    print(client.quote(symbol="META"))
+    crypto = client.crypto_symbols('BINANCE')
+    df = pd.DataFrame(crypto)
+    df.to_json("crypto_symbols.json")
+
     

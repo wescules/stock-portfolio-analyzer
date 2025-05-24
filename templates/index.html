@@ -101,11 +101,11 @@
         /* Dynamic background color based on gain/loss */
         /* Changed from '>' to space to target descendant elements */
         .text-green-600 .day-gain-percent-box {
-            background-color: #22c55e; /* Tailwind green-500 or similar */
+            background-color: #81c995; /* Softer green */
         }
 
         .text-red-600 .day-gain-percent-box {
-            background-color: #ef4444; /* Tailwind red-500 or similar */
+            background-color: #f87171; /* Softer red */
         }
 
         /* Add a default style for zero change or neutral cases */
@@ -141,21 +141,8 @@
         }
     </style>
 </head>
-<body>
+<body class="min-h-screen bg-gray-100 p-4 font-sans antialiased">
 
-<h2 style="text-align:center;">Equity Over Time</h2>
-
-<div id="chart"></div>
-<div class="buttons">
-    <button onclick="changeRange('1D')">1D</button>
-    <button onclick="changeRange('1W')">1W</button>
-    <button onclick="changeRange('1M')">1M</button>
-    <button onclick="changeRange('3M')">3M</button>
-    <button onclick="changeRange('6M')">6M</button>
-    <button onclick="changeRange('1Y')">1Y</button>
-    <button onclick="changeRange('3Y')">3Y</button>
-    <button onclick="changeRange('ALL')">ALL</button>
-</div>
 <script>
 let fullData = [];
 
@@ -270,12 +257,63 @@ function changeRange(range) {
 }
 </script>
     <div class="max-w-6xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
+        <div class="bg-white rounded-lg shadow-lg p-6 mb-4">
+            <div class="flex items-start justify-between mb-2">
+                <div class="flex flex-col">
+                    <h3 class="text-lg font-semibold text-gray-800">SCHWAB</h3>
+                    <span id="401k-balance" class="text-4xl font-bold text-gray-900 mt-1"></span>
+                    <div class="flex items-center text-sm text-gray-500 mt-1">
+                        <span id="401k-timestamp"></span>
+                        <span class="ml-2">USD</span>
+                        <span class="ml-2 text-blue-600 cursor-pointer">Disclaimer</span>
+                    </div>
+                </div>
+                <button class="text-sm font-medium text-blue-600 hover:text-blue-800">View Details</button>
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-4 mb-4">
+    <div class="w-full md:w-2/3">
+                    <div id="chart"></div>
+                </div>
+
+                <div class="pt-4 md:pt-0 md:border-l md:border-gray-200 md:pl-4">
+                    <h4 class="text-sm font-semibold text-gray-500 uppercase mb-2">Portfolio highlights</h4>
+                    <div id="portfolio-highlights-list">
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-center space-x-2 text-sm font-medium text-gray-600 mb-4">
+                <button class="px-3 py-1 rounded-full bg-blue-100 text-blue-700" onclick="changeRange('1D')">1D</button>
+                <button class="px-3 py-1 rounded-full hover:bg-gray-200" onclick="changeRange('1W')">1W</button>
+                <button class="px-3 py-1 rounded-full hover:bg-gray-200" onclick="changeRange('3M')">1M</button>
+                <button class="px-3 py-1 rounded-full hover:bg-gray-200" onclick="changeRange('6M')">6M</button>
+                <button class="px-3 py-1 rounded-full hover:bg-gray-200" onclick="changeRange('1Y')">1Y</button>
+                <button class="px-3 py-1 rounded-full hover:bg-gray-200" onclick="changeRange('3Y')">3Y</button>
+                <button class="px-3 py-1 rounded-full hover:bg-gray-200" onclick="changeRange('ALL')">MAX</button>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <h4 class="text-sm font-semibold text-gray-500 uppercase mb-1">Day Gain</h4>
+                    <div class="flex items-center">
+                        <span id="401k-day-change" class="text-lg font-bold"></span>
+                        <span id="401k-day-percent" class="ml-2 text-base font-medium"></span>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <h4 class="text-sm font-semibold text-gray-500 uppercase mb-1">Total Gain</h4>
+                    <div class="flex items-center justify-end">
+                        <span id="401k-total-gain" class="text-lg font-bold"></span>
+                        <span id="401k-total-percent" class="ml-2 text-base font-medium"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex space-x-4">
                     <button class="px-4 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded-full hover:bg-blue-50">Investments</button>
-                    <button class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200">Activity</button>
-                    <button class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200">News and events</button>
                 </div>
                 <div class="flex items-center space-x-4">
                     <div class="relative" id="sort-dropdown-container">
@@ -292,10 +330,6 @@ function changeRange(range) {
                         </div>
                     </div>
 
-                    <button class="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
-                        Visualize
-                    </button>
                     <button id="add-investment-btn" class="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-full hover:bg-blue-700">
                         <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
                         Investment
@@ -304,10 +338,21 @@ function changeRange(range) {
             </div>
 
             <div class="grid grid-cols-12 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                <div class="col-span-4">Symbol Name</div>
+                <div class="col-span-4">Investment Name</div>
                 <div class="col-span-2 text-right">Price</div>
                 <div class="col-span-2 text-right">Quantity</div>
-                <div class="col-span-2 text-right">Day Gain</div>
+                <div class="col-span-2 text-right">
+                    <div class="relative inline-block text-left" id="gain-view-dropdown-container">
+                        <button id="gain-view-button" class="flex items-center text-xs font-semibold text-gray-500 uppercase tracking-wider focus:outline-none">
+                            <span id="gain-header-text">Day Gain</span>
+                            <svg class="w-3 h-3 ml-1 transition-transform duration-200" id="gain-view-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </button>
+                        <div id="gain-view-dropdown-menu" class="absolute right-0 mt-2 w-32 bg-white rounded-md shadow-lg py-1 z-10 hidden">
+                            <button class="block px-4 py-2 text-sm text-gray-700 w-full text-left hover:bg-gray-100" data-gain-type="day">Day Gain</button>
+                            <button class="block px-4 py-2 text-sm text-gray-700 w-full text-left hover:bg-gray-100" data-gain-type="total">Total Gain</button>
+                        </div>
+                    </div>
+                </div>                
                 <div class="col-span-2 text-right">Value</div>
             </div>
         </div>
@@ -361,12 +406,16 @@ function changeRange(range) {
         // Sample investment data (replace with your API fetch)
         // Added 'transactionId' to each purchase for deletion functionality.
         const investments = [];
+        let four01kData = {};
         let expandedInvestmentId = null; // State to keep track of which investment's details are currently expanded
         let currentSortCriteria = 'symbol'; // Default sort criteria
         let currentSortDirection = 'asc';   // Default sort direction (ascending)
         let isSortDropdownOpen = false;     // State for dropdown visibility
+        let isGainViewDropdownOpen = false; // State for gain view dropdown visibility
         let debounceTimer;                  // For symbol input debounce
         let selectedSymbolData = null;      // Stores the full data of the selected symbol from suggestions
+        let currentGainView = 'day';        // 'day' or 'total'
+
 
         /**
          * Toggles the expansion of an investment card.
@@ -418,9 +467,9 @@ function changeRange(range) {
          */
         function getArrowIcon(value) {
             if (value > 0) {
-                return '↑'; // Up arrow for positive
+                return '🡹'; // Up arrow for positive
             } else if (value < 0) {
-                return '↓'; // Down arrow for negative
+                return '🡻'; // Down arrow for negative
             }
             return ''; // No arrow for zero or no change
         }
@@ -439,6 +488,39 @@ function changeRange(range) {
                 dropdownMenu.classList.add('hidden');
                 sortArrow.classList.remove('rotate-180');
             }
+        }
+
+        /**
+         * Toggles the visibility of the gain view dropdown menu.
+         */
+        function toggleGainViewDropdown() {
+            isGainViewDropdownOpen = !isGainViewDropdownOpen;
+            const dropdownMenu = document.getElementById('gain-view-dropdown-menu');
+            const gainViewArrow = document.getElementById('gain-view-arrow');
+            if (isGainViewDropdownOpen) {
+                dropdownMenu.classList.remove('hidden');
+                gainViewArrow.classList.add('rotate-180');
+            } else {
+                dropdownMenu.classList.add('hidden');
+                gainViewArrow.classList.remove('rotate-180');
+            }
+        }
+
+        /**
+         * Sets the current gain view type ('day' or 'total') and re-renders.
+         * @param {string} type - The type of gain to display ('day' or 'total').
+         */
+        function setGainView(type) {
+            currentGainView = type;
+            const gainHeaderText = document.getElementById('gain-header-text');
+            
+            if (currentGainView === 'day') {
+                gainHeaderText.textContent = 'Day Gain';
+            } else {
+                gainHeaderText.textContent = 'Total Gain';
+            }
+            toggleGainViewDropdown(); // Close the dropdown after selection
+            renderInvestments(); // Re-render to reflect the new view
         }
 
         /**
@@ -499,6 +581,9 @@ function changeRange(range) {
                 } else {
                     // Re-calculate total quantity for the investment if a purchase was deleted
                     investments[investmentIndex].quantity = investments[investmentIndex].purchases.reduce((sum, p) => sum + p.quantity, 0);
+                    // Recalculate total gain for the investment
+                    calculateInvestmentAggregates();
+
                 }
 
                 // Re-render the investments to reflect the deletion
@@ -538,6 +623,10 @@ function changeRange(range) {
             investments.forEach(investment => {
                 const isExpanded = expandedInvestmentId === investment.id;
 
+                // Determine which gain to display based on currentGainView
+                const displayGain = currentGainView === 'day' ? investment.dayGain : investment.totalGain;
+                const displayGainPercent = currentGainView === 'day' ? investment.dayGainPercent : investment.totalGainPercent;
+
                 // Create the main investment card container
                 const investmentCard = document.createElement('div');
                 investmentCard.className = 'bg-white hover:bg-gray-50';
@@ -563,9 +652,9 @@ function changeRange(range) {
                     <div class="col-span-2 text-right text-gray-800 font-medium">
                         ${investment.quantity.toFixed(4)}
                     </div>
-                    <div class="col-span-2 text-right font-medium ${getChangeStyle(investment.dayGain)}">
-                        ${investment.dayGain > 0 ? '+' : ''}${formatCurrency(investment.dayGain)}
-                        <span class="ml-1 text-xs">${getArrowIcon(investment.dayGainPercent)}${formatPercentage(Math.abs(investment.dayGainPercent))}</span>
+                    <div class="col-span-2 text-right font-medium ${getChangeStyle(displayGain)}">
+                        ${displayGain > 0 ? '+' : ''}${formatCurrency(displayGain)}
+                        <span class="ml-1 text-xs"><span class="day-gain-percent-box">${getArrowIcon(displayGainPercent)}${formatPercentage(Math.abs(displayGainPercent))}</span></span>
                     </div>
                     <div class="col-span-2 text-right text-gray-800 font-medium flex items-center justify-end">
                         ${formatCurrency(investment.value)}
@@ -602,7 +691,7 @@ function changeRange(range) {
                             <div class="col-span-2 text-right">${purchase.quantity.toFixed(4)}</div>
                             <div class="col-span-3 text-right font-medium ${getChangeStyle(purchase.totalGain)}">
                                 ${purchase.totalGain > 0 ? '+' : ''}${formatCurrency(purchase.totalGain)}
-                                <span class="ml-1 text-xs">${getArrowIcon(purchase.totalGainPercent)}${formatPercentage(Math.abs(purchase.totalGainPercent))}</span>
+                                <span class="ml-1"><span class="">${getArrowIcon(purchase.totalGainPercent)}${formatPercentage(Math.abs(purchase.totalGainPercent))}</span></span>
                             </div>
                             <div class="col-span-1 text-right font-medium">${formatCurrency(purchase.value)}</div>
                             <div class="col-span-1 text-right">
@@ -616,16 +705,6 @@ function changeRange(range) {
                         `;
                         body.appendChild(purchaseRow);
                     });
-
-                    // Add "Record another purchase" button
-                    body.innerHTML += `
-                        <div class="mt-4 text-center">
-                            <button class="inline-flex items-center px-4 py-2 text-sm font-medium text-blue-600 rounded-full hover:bg-blue-50">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                                Record another purchase
-                            </button>
-                        </div>
-                    `;
                     investmentCard.appendChild(body);
                 }
 
@@ -643,6 +722,86 @@ function changeRange(range) {
                 });
             });
         }
+
+        /**
+         * Calculates the total gain and total gain percentage for each investment.
+         * This function should be called after initial data load and any data updates.
+         */
+        function calculateInvestmentAggregates() {
+            investments.forEach(investment => {
+                let totalPurchasedQuantity = 0;
+                let totalCostBasis = 0;
+
+                investment.purchases.forEach(purchase => {
+                    totalPurchasedQuantity += purchase.quantity;
+                    totalCostBasis += purchase.purchasePrice * purchase.quantity;
+                });
+
+                // Use the current price (investment.price) and total quantity to calculate current value
+                const currentValue = investment.price * totalPurchasedQuantity;
+
+                investment.totalPurchasedQuantity = totalPurchasedQuantity; // Store for clarity
+                investment.totalCostBasis = totalCostBasis; // Store for clarity
+
+                // Calculate actual total gain and percentage
+                if (totalCostBasis > 0) {
+                    investment.totalGain = currentValue - totalCostBasis;
+                    investment.totalGainPercent = (investment.totalGain / totalCostBasis) * 100;
+                } else {
+                    investment.totalGain = 0;
+                    investment.totalGainPercent = 0;
+                }
+            });
+        }
+
+        /**
+         * Renders the 401k balance component with current data.
+         */
+        function render401kBalance() {
+            document.getElementById('401k-balance').textContent = formatCurrency(four01kData.balance);
+            document.getElementById('401k-timestamp').textContent = four01kData.timestamp;
+
+            const dayChangeElement = document.getElementById('401k-day-change');
+            const dayPercentElement = document.getElementById('401k-day-percent');
+            const totalGainElement = document.getElementById('401k-total-gain');
+            const totalPercentElement = document.getElementById('401k-total-percent');
+
+            // Day Gain
+            const dayChangeStyle = getChangeStyle(four01kData.dayChange);
+            const daySign = four01kData.dayChange > 0 ? '+' : '';
+            dayChangeElement.textContent = `${daySign}${formatCurrency(Math.abs(four01kData.dayChange))}`;
+            dayChangeElement.className = `text-lg font-bold ${dayChangeStyle}`; // Removed ml-3, applied directly to span
+            dayPercentElement.textContent = `${daySign}${formatPercentage(Math.abs(four01kData.dayPercent))}`;
+            dayPercentElement.className = `ml-2 text-base font-medium ${dayChangeStyle}`;
+
+            // Total Gain
+            const totalGainStyle = getChangeStyle(four01kData.totalGain);
+            const totalSign = four01kData.totalGain > 0 ? '+' : '';
+            totalGainElement.textContent = `${totalSign}${formatCurrency(Math.abs(four01kData.totalGain))}`;
+            totalGainElement.className = `text-lg font-bold ${totalGainStyle}`;
+            totalPercentElement.textContent = `${totalSign}${formatPercentage(Math.abs(four01kData.totalGainPercent))}`;
+            totalPercentElement.className = `ml-2 text-base font-medium ${totalGainStyle}`;
+        }
+
+        /**
+         * Renders the portfolio highlights section.
+         */
+        function renderPortfolioHighlights() {
+            const container = document.getElementById('portfolio-highlights-list');
+            container.innerHTML = ''; // Clear existing content
+            if(Object.keys(four01kData).length !== 0){
+                four01kData.portfolioHighlights.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'portfolio-highlight-item text-gray-800 text-sm';
+                    div.innerHTML = `
+                        <span class="font-medium">${item.percent}% ${item.name}</span>
+                        <span class="font-semibold">${formatCurrency(item.value)}</span>
+                    `;
+                    container.appendChild(div);
+                });
+            }
+        }
+
 
         // --- New Transaction Modal Functions ---
         const newTransactionModal = document.getElementById('new-transaction-modal');
@@ -685,7 +844,7 @@ function changeRange(range) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json(); // Parse the full response object
-                const suggestions = data.result; // Access the 'result' array
+                const suggestions = data; // Access the 'result' array
 
                 renderSymbolSuggestions(suggestions);
             } catch (error) {
@@ -699,6 +858,7 @@ function changeRange(range) {
          * @param {Array<Object>} suggestions - An array of symbol suggestion objects.
          */
         function renderSymbolSuggestions(suggestions) {
+            console.log(suggestions)
             symbolSuggestionsContainer.innerHTML = '';
             symbolSuggestionsContainer.classList.remove('hidden');
             if (suggestions && suggestions.length > 0) {
@@ -717,7 +877,8 @@ function changeRange(range) {
                             symbol: sug.symbol, // Use the 'symbol' for internal data
                             company: sug.description,
                             exchange: sug.exchange,
-                            displaySymbol: sug.displaySymbol
+                            displaySymbol: sug.displaySymbol,
+                            type: sug.type
                         }; 
                         symbolSuggestionsContainer.innerHTML = ''; // Clear suggestions after selection
                         symbolSuggestionsContainer.classList.add('hidden');
@@ -768,10 +929,15 @@ function changeRange(range) {
                 showMessageBox('Please fill all fields correctly. Quantity and Cost Basis must be positive numbers.', 'error');
                 return;
             }
+            if(!selectedSymbolData?.type){
+                showMessageBox('Please select a company from the dropdown. We apologize if your ticker is not supported.', 'error');
+                return;
+            }
 
             // Use selectedSymbolData for the actual symbol and company name
             const actualSymbol = selectedSymbolData ? selectedSymbolData.symbol : symbol;
             const companyName = selectedSymbolData ? selectedSymbolData.company : 'Unknown Company';
+            const symbolType = selectedSymbolData.type
 
             // Find the investment to add the purchase to, or create a new one
             let investmentToUpdate = investments.find(inv => inv.symbol === actualSymbol);
@@ -805,6 +971,10 @@ function changeRange(range) {
             // Update the overall investment quantity based on all purchases
             investmentToUpdate.quantity = investmentToUpdate.purchases.reduce((sum, p) => sum + p.quantity, 0);
 
+            // Recalculate aggregates for the updated investment
+            calculateInvestmentAggregates();
+
+
             // Sort investments again to ensure new ones are in correct order
             sortInvestments(currentSortCriteria); // Re-sort after adding to maintain order
 
@@ -823,6 +993,7 @@ function changeRange(range) {
                     quantity: quantity,
                     company_name: companyName,
                     symbol: actualSymbol,
+                    type: symbolType,
                 })
             })
             .then(response => {
@@ -845,10 +1016,18 @@ function changeRange(range) {
         async function pollInvestments() {
             console.log('Fetching investments...'); // For debugging
             const apiData = await fetchDataFromAPI();
-            if (apiData.length > 0) { // Only update if data was successfully fetched
+            console.log(apiData)
+            if (apiData.positions.length > 0) { // Only update if data was successfully fetched
                 // Clear the existing sample data and populate with API data
-                investments.splice(0, investments.length, ...apiData); // Add all fetched data
+                console.log(apiData.positions)
+                console.log(apiData)
+                investments.splice(0, investments.length, ...apiData.positions); // Add all fetched data
+                four01kData = apiData
+                calculateInvestmentAggregates(); // Recalculate aggregates for new API data
                 renderInvestments(); // Re-render the list with updated data
+                render401kBalance(); // Update 401k balance as well
+                renderPortfolioHighlights(); // Update portfolio highlights
+
             }
             // Schedule the next fetch after 10 seconds (10000 milliseconds)
             // This ensures the next call starts 10 seconds *after the current one finishes*
@@ -857,10 +1036,27 @@ function changeRange(range) {
 
         // Initial render when the DOM is fully loaded
         document.addEventListener('DOMContentLoaded', () => {
+            calculateInvestmentAggregates(); // Calculate aggregates for initial sample data
+
             // Start the polling process when the page loads
             pollInvestments();
 
+            render401kBalance(); // Update 401k balance as well
+            renderPortfolioHighlights(); // Update portfolio highlights
+
+
             renderInvestments(); // Initial render with default sorting
+
+            // Attach event listeners to gain view dropdown button
+            document.getElementById('gain-view-button').addEventListener('click', toggleGainViewDropdown);
+
+            // Attach event listeners to gain view dropdown items
+            document.querySelectorAll('#gain-view-dropdown-menu button').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const gainType = event.target.dataset.gainType;
+                    setGainView(gainType);
+                });
+            });
             
             // Attach event listener to the sort button
             document.getElementById('sort-button').addEventListener('click', toggleSortDropdown);
@@ -876,8 +1072,13 @@ function changeRange(range) {
             // Close dropdown when clicking outside
             document.addEventListener('click', (event) => {
                 const sortDropdownContainer = document.getElementById('sort-dropdown-container');
+                const gainViewDropdownContainer = document.getElementById('gain-view-dropdown-container');
+
                 if (isSortDropdownOpen && !sortDropdownContainer.contains(event.target)) {
                     toggleSortDropdown();
+                }
+                if (isGainViewDropdownOpen && !gainViewDropdownContainer.contains(event.target)) {
+                    toggleGainViewDropdown();
                 }
             });
 
