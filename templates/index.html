@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
 <style>
         /* Custom font family */
         body {
@@ -276,12 +278,25 @@ function changeRange(range) {
                     <div id="chart"></div>
                 </div>
 
-                <div class="pt-4 md:pt-0 md:border-l md:border-gray-200 md:pl-4">
+                <div class="w-full md:w-1/3 pt-4 md:pt-0 md:border-l md:border-gray-200 md:pl-4">
                     <h4 class="text-sm font-semibold text-gray-500 uppercase mb-2">Portfolio highlights</h4>
                     <div id="portfolio-highlights-list">
                     </div>
                 </div>
             </div>
+            <!-- <div class="flex flex-col md:flex-row gap-4 mb-4">
+
+                <div
+                    class="w-full md:w-2/3 h-40 bg-gray-100 rounded-md flex items-center justify-center text-gray-400 text-sm">
+                    <div id="chart"></div>
+                </div>
+
+                <div class="w-full md:w-1/3 pt-4 md:pt-0 md:border-l md:border-gray-200 md:pl-4">
+                    <h4 class="text-sm font-semibold text-gray-500 uppercase mb-2">Portfolio highlights</h4>
+                    <div id="portfolio-highlights-list">
+                    </div>
+                </div>
+            </div> -->
 
             <div class="flex justify-center space-x-2 text-sm font-medium text-gray-600 mb-4">
                 <button class="px-3 py-1 rounded-full bg-blue-100 text-blue-700" onclick="changeRange('1D')">1D</button>
@@ -783,19 +798,49 @@ function changeRange(range) {
             totalPercentElement.className = `ml-2 text-base font-medium ${totalGainStyle}`;
         }
 
+        // Define colors for different portfolio categories
+        const categoryColors = {
+            "stocks": "#3B82F6", // blue-500
+            "STOCK": "#3B82F6", // blue-500
+            "STOCKS": "#3B82F6", // blue-500
+            "Common Stock": "#3B82F6", // blue-500
+            "Crypto": "#F59E0B", // amber-500
+            "CRYPTO": "#F59E0B", // amber-500
+            "crypto": "#F59E0B", // amber-500
+            "ETP": "#A78BFA",    // purple-400
+            "ETF": "#A78BFA",    // purple-400
+            "etf": "#A78BFA",    // purple-400
+            "etf": "#A78BFA",    // purple-400
+            "cash": "#10B981",    // emerald-500
+            "CASH": "#10B981",    // emerald-500
+        };
         /**
          * Renders the portfolio highlights section.
          */
         function renderPortfolioHighlights() {
             const container = document.getElementById('portfolio-highlights-list');
             container.innerHTML = ''; // Clear existing content
-            if(Object.keys(four01kData).length !== 0){
+            
+            if (four01kData && four01kData.portfolioHighlights && Array.isArray(four01kData.portfolioHighlights)) {
                 four01kData.portfolioHighlights.forEach(item => {
                     const div = document.createElement('div');
-                    div.className = 'portfolio-highlight-item text-gray-800 text-sm';
+                    const color = categoryColors[item.name] || '#6B7280'; // Default to gray-500 if category not found
+
+                    div.className = 'flex flex-col py-2 px-2 rounded-md hover:bg-gray-50 transition-colors duration-200';
                     div.innerHTML = `
-                        <span class="font-medium">${item.percent}% ${item.name}</span>
-                        <span class="font-semibold">${formatCurrency(item.value)}</span>
+                        <div class="flex items-center justify-between mb-1">
+                            <div class="flex items-center">
+                                <span class="w-3 h-3 rounded-full mr-2" style="background-color: ${color};"></span>
+                                <span class="font-medium text-gray-800">${item.name.charAt(0).toUpperCase() + item.name.slice(1)}</span>
+                            </div>
+                            <span class="font-semibold text-gray-900">${formatCurrency(item.value)}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm text-gray-600">
+                            <span class="w-1/4">${item.percent.toFixed(1)}%</span>
+                            <div class="w-3/4 bg-gray-200 rounded-full h-2 ml-2">
+                                <div class="h-full rounded-full" style="width: ${item.percent}%; background-color: ${color};"></div>
+                            </div>
+                        </div>
                     `;
                     container.appendChild(div);
                 });

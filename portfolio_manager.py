@@ -29,7 +29,7 @@ class PortfolioManager:
     def _load_transactions(self):
         if os.path.exists(self.tx_file):
             return pd.read_json(self.tx_file)
-        cols = ["symbol", "quantity", "cost_basis", "date", "transactionId"]
+        cols = ["symbol", "quantity", "cost_basis", "date", "transactionId", "type"]
         return pd.DataFrame(columns=cols)
 
     def _save_transactions(self):
@@ -138,7 +138,7 @@ class PortfolioManager:
         symbol_info = self.transactions[self.transactions['symbol'] == symbol].index
         transaction = self.transactions.iloc[symbol_info]
         
-        return transaction['type'].iloc[0].lower() == 'crypto'
+        return transaction['type'].iloc[0].lower() == 'crypto' or transaction['type'].iloc[0].lower() == 'cash'
         
     def get_realtime_quote(self, symbol):
         if self.is_crypto_symbol(symbol):
@@ -192,7 +192,7 @@ class PortfolioManager:
         price_data['date'] = price_data.index.date
         daily_aggregated_values = price_data.groupby('date')[columns].sum()
         price_data = price_data.drop(columns=['date'])
-        price_data['equity'] = daily_aggregated_values.sum(axis=1)
+        price_data['equity'] = daily_aggregated_values.sum(axis=1) if len(daily_aggregated_values.columns) > 1 else price_data[symbol]
                 
         price_data['equity'].dropna(inplace=True)
                 
@@ -419,9 +419,6 @@ if __name__ == '__main__':
 
     # ws.run_forever()
     
-    print(client.quote(symbol="META"))
-    crypto = client.crypto_symbols('BINANCE')
-    df = pd.DataFrame(crypto)
-    df.to_json("crypto_symbols.json")
+
 
     

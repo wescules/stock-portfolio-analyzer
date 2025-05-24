@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Portfolio Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Add some simple transition for elements */
+        .value-change.positive { color: #10B981; } /* Tailwind green-500 */
+        .value-change.negative { color: #EF4444; } /* Tailwind red-500 */
+        .value-change.no-change { color: #6B7280; } /* Tailwind gray-500 */
+    </style>
+</head>
+<body class="bg-gray-100 p-8 font-sans">
+    <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-xl p-6 md:p-8">
+        <h1 class="text-4xl font-extrabold text-gray-900 mb-6 border-b pb-4">My Portfolio</h1>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-blue-50 p-6 rounded-lg shadow-sm">
+                <h2 class="text-xl font-semibold text-blue-800 mb-2">Current Balance</h2>
+                <p id="totalBalance" class="text-5xl font-extrabold text-blue-900 mb-2">$0.00</p>
+                <div class="flex items-center text-lg">
+                    <span id="dayChange" class="font-bold mr-2"></span>
+                    <span id="dayPercent" class="font-medium"></span>
+                </div>
+                <p class="text-sm text-gray-500 mt-2">Last Updated: <span id="timestamp">N/A</span></p>
+            </div>
+
+            <div class="bg-purple-50 p-6 rounded-lg shadow-sm">
+                <h2 class="text-xl font-semibold text-purple-800 mb-2">Total Gain/Loss</h2>
+                <p id="totalGain" class="text-4xl font-extrabold text-purple-900 mb-2">$0.00</p>
+                <p id="totalGainPercent" class="text-lg font-medium"></p>
+            </div>
+        </div>
+
+        <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">Portfolio Breakdown</h2>
+        <div id="portfolioHighlights" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+            </div>
+
+        <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">Holdings</h2>
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white border border-gray-200 rounded-lg shadow-sm">
+                <thead>
+                    <tr class="bg-gray-50 text-left text-sm text-gray-600 uppercase tracking-wider">
+                        <th class="py-3 px-4">Symbol</th>
+                        <th class="py-3 px-4">Company</th>
+                        <th class="py-3 px-4 text-right">Price</th>
+                        <th class="py-3 px-4 text-right">Quantity</th>
+                        <th class="py-3 px-4 text-right">Day Gain</th>
+                        <th class="py-3 px-4 text-right">Day %</th>
+                        <th class="py-3 px-4 text-right">Value</th>
+                        </tr>
+                </thead>
+                <tbody id="holdingsTableBody" class="divide-y divide-gray-200">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const formatCurrency = (value) => {
+            if (value === undefined || value === null) return '$0.00';
+            return `$${value.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}`;
+        };
+
+        const formatPercent = (value) => {
+            if (value === undefined || value === null) return '0.00%';
+            return `${value.toFixed(2)}%`;
+        };
+
+        const getChangeClass = (value) => {
+            if (value > 0) return 'value-change positive';
+            if (value < 0) return 'value-change negative';
+            return 'value-change no-change';
+        };
+
+        const categoryColors = {
+            'equity': '#3B82F6', // blue-500
+            'etf': '#F59E0B',    // yellow-500
+            'crypto': '#8B5CF6',  // purple-500
+            'mutual_fund': '#10B981', // green-500
+            // Add more categories as needed
+        };
+
+        if (window.EventSource) {
+            const eventSource = new EventSource('/portfolio-stream');
+
+            eventSource.onmessage = function(event) {
+                const portfolioData = JSON.parse(event.data);
+                console.log("Received portfolio update:", portfolioData);
+
+                // Update Overall Portfolio Value Card
+                document.getElementById('totalBalance').textContent = formatCurrency(portfolioData.balance);
+                
+                const dayChangeElement = document.getElementById('dayChange');
+                const dayPercentElement = document.getElementById('dayPercent');
+
+                dayChangeElement.textContent = `${portfolioData.dayChange > 0 ? '+' : ''}${formatCurrency(portfolioData.dayChange)}`;
+                dayChangeElement.className = getChangeClass(portfolioData.dayChange) + ' font-bold mr-2';
+
+                dayPercentElement.textContent = `${portfolioData.dayPercent > 0 ? '+' : ''}${formatPercent(portfolioData.dayPercent)}`;
+                dayPercentElement.className = getChangeClass(portfolioData.dayPercent) + ' font-medium';
+
+                document.getElementById('timestamp').textContent = portfolioData.timestamp;
+
+                // Update Total Gain/Loss Card
+                document.getElementById('totalGain').textContent = formatCurrency(portfolioData.totalGain);
+                document.getElementById('totalGain').className = getChangeClass(portfolioData.totalGain) + ' text-4xl font-extrabold mb-2';
+                
+                document.getElementById('totalGainPercent').textContent = `${portfolioData.totalGainPercent > 0 ? '+' : ''}${formatPercent(portfolioData.totalGainPercent)}`;
+                document.getElementById('totalGainPercent').className = getChangeClass(portfolioData.totalGainPercent) + ' text-lg font-medium';
+
+
+                // Update Portfolio Highlights
+                const portfolioHighlightsDiv = document.getElementById('portfolioHighlights');
+                portfolioHighlightsDiv.innerHTML = ''; // Clear previous highlights
+                portfolioData.portfolioHighlights.forEach(item => {
+                    const div = document.createElement('div');
+                    const color = categoryColors[item.name] || '#6B7280';
+
+                    div.className = 'flex flex-col py-2 px-2 rounded-md hover:bg-gray-50 transition-colors duration-200';
+                    div.innerHTML = `
+                        <div class="flex items-center justify-between mb-1">
+                            <div class="flex items-center">
+                                <span class="w-3 h-3 rounded-full mr-2" style="background-color: ${color};"></span>
+                                <span class="font-medium text-gray-800">${item.name.charAt(0).toUpperCase() + item.name.slice(1)}</span>
+                            </div>
+                            <span class="font-semibold text-gray-900">${formatCurrency(item.value)}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm text-gray-600">
+                            <span class="w-1/4">${item.percent.toFixed(1)}%</span>
+                            <div class="w-3/4 bg-gray-200 rounded-full h-2 ml-2">
+                                <div class="h-full rounded-full" style="width: ${item.percent}%; background-color: ${color};"></div>
+                            </div>
+                        </div>
+                    `;
+                    portfolioHighlightsDiv.appendChild(div);
+                });
+
+                // Update Holdings Table
+                const holdingsTableBody = document.getElementById('holdingsTableBody');
+                holdingsTableBody.innerHTML = ''; // Clear previous rows
+                portfolioData.positions.forEach(position => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50 transition-colors duration-100';
+                    row.innerHTML = `
+                        <td class="py-3 px-4 font-bold text-gray-800">${position.symbol}</td>
+                        <td class="py-3 px-4 text-gray-700">${position.name}</td>
+                        <td class="py-3 px-4 text-right">${formatCurrency(position.price)}</td>
+                        <td class="py-3 px-4 text-right">${position.quantity.toFixed(4)}</td>
+                        <td class="py-3 px-4 text-right ${getChangeClass(position.dayGain)}">${position.dayGain > 0 ? '+' : ''}${formatCurrency(position.dayGain)}</td>
+                        <td class="py-3 px-4 text-right ${getChangeClass(position.dayGainPercent)}">${position.dayGainPercent > 0 ? '+' : ''}${formatPercent(position.dayGainPercent)}</td>
+                        <td class="py-3 px-4 text-right font-semibold text-gray-900">${formatCurrency(position.value)}</td>
+                    `;
+                    holdingsTableBody.appendChild(row);
+                });
+            };
+
+            eventSource.onerror = function(error) {
+                console.error("EventSource failed:", error);
+                // Optionally display an error message on the page
+                eventSource.close();
+            };
+        } else {
+            alert("Your browser does not support Server-Sent Events. Please use a modern browser.");
+        }
+    </script>
+</body>
+</html>

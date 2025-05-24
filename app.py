@@ -25,6 +25,28 @@ def index():
 
 @app.route('/api/equity')
 def equity():
+    # manager.add_transaction(symbol="AAPL", quantity=10.1871, cost_basis=160.80, date=None, company_name="APPLE INC", type="Equity")
+    # manager.add_transaction(symbol="HOOD", quantity=500, cost_basis=63.14, date=None, company_name="ROBINHOOD MKTS INC CLA...", type="Equity")
+    # manager.add_transaction(symbol="META", quantity=248.2124, cost_basis=172.60, date=None, company_name="META PLATFORMS INC CLAS...", type="Equity")
+    # manager.add_transaction(symbol="GOOG", quantity=90.1075, cost_basis=201.19, date=None, company_name="ALPHABET INC CLASS C", type="Equity")
+    # manager.add_transaction(symbol="ATYR", quantity=1000, cost_basis=3.04, date=None, company_name="ATYR PHARMA INC", type="Equity")
+    # manager.add_transaction(symbol="V", quantity=184.2974, cost_basis=180.54, date=None, company_name="VISA INC CLASS A", type="Equity")
+    # manager.add_transaction(symbol="V", quantity=50, cost_basis=358.38, date=None, company_name="VISA INC CLASS A", type="Equity")
+    # manager.add_transaction(symbol="V", quantity=85, cost_basis=366.94, date=None, company_name="VISA INC CLASS A", type="Equity")
+    # manager.add_transaction(symbol="MSFT", quantity=21.3218, cost_basis=358.19, date=None, company_name="MICROSOFT CORP", type="Equity")
+    # manager.add_transaction(symbol="UBER", quantity=175, cost_basis=69.75, date=None, company_name="UBER TECHNOLOGIES INC", type="Equity")
+    # manager.add_transaction(symbol="RDDT", quantity=120, cost_basis=183.43, date=None, company_name="REDDIT INC CLASS A", type="Equity")
+    # manager.add_transaction(symbol="QQQ", quantity=47.1265, cost_basis=342.51, date=None, company_name="INVESCO QQQ TRUST", type="ETF")
+    # manager.add_transaction(symbol="SPY", quantity=21.155, cost_basis=414.93, date=None, company_name="SPDR S&P 500 ETF", type="ETF")
+    # manager.add_transaction(symbol="VOO", quantity=31.8308, cost_basis=383.35, date=None, company_name="VANGUARD S&P 500 ETF", type="ETF")
+    # manager.add_transaction(symbol="VTI", quantity=53.0149, cost_basis=214.01, date=None, company_name="VANGUARD TOTAL STOCK M...", type="ETF")
+    # manager.add_transaction(symbol="VOO", quantity=10, cost_basis=395.14, date=None, company_name="VANGUARD S&P 500 ETF", type="ETF")
+    # manager.add_transaction(symbol="VTI", quantity=39, cost_basis=221.11, date=None, company_name="VANGUARD TOTAL STOCK M...", type="ETF")
+    # manager.add_transaction(symbol="ETH-USD", quantity=1.0745, cost_basis=2625.81, date=None, company_name="ETHEREUM", type="CRYPTO")
+    # manager.add_transaction(symbol="ADA-USD", quantity=1492.884029, cost_basis=0.34, date=None, company_name="CARDANO", type="CRYPTO")
+    # manager.add_transaction(symbol="BTC-USD", quantity=0.20302474, cost_basis=16941.42, date=None, company_name="BITCOIN", type="CRYPTO")
+    # manager.add_transaction(symbol="USDT-USD", quantity=298711.14, cost_basis=1.00, date=None, company_name="Tether", type="CASH")
+
     equity_history = manager.compute_equity_history()
     return jsonify(equity_history)
 
@@ -109,18 +131,4 @@ def intraday_equity():
 
 
 if __name__ == '__main__':
-    # manager.add_transaction(symbol="VTI", quantity=92.0149, cost_basis=286.77, date=None, company_name="VTI INSTRUMENTS", type="ETF")
-    # manager.add_transaction(symbol="VOO", quantity=41.8308, cost_basis=535.77, date=None, company_name="VOO INDEX", type="ETF")
-    # manager.add_transaction(symbol="V", quantity=269.2974, cost_basis=358.30, date=None, company_name="VISA", type="STOCK")
-    
-    # manager.add_transaction(symbol="UBER", quantity=175, cost_basis=88.67, date=None, company_name="UBER", type="STOCK")
-    # manager.add_transaction(symbol="SPY", quantity=21.155, cost_basis=582.86, date=None, company_name="SPY INDEX", type="ETF")
-    # manager.add_transaction(symbol="HOOD", quantity=500, cost_basis=63.14, date=None, company_name="ROBINHOOD", type="STOCK")
-    # manager.add_transaction(symbol="RDDT", quantity=120, cost_basis=183.43, date=None, company_name="REDDIT", type="STOCK")
-    # manager.add_transaction(symbol="MSFT", quantity=21.3218, cost_basis=358.19, date=None, company_name="MICROSOFT", type="STOCK")
-    # manager.add_transaction(symbol="USDT-USD", quantity=298711.14, cost_basis=1.00, date=None, company_name="CASH", type="CASH")
-    # manager.add_transaction(symbol="ETH-USD", quantity=1.0745, cost_basis=2625.81, date=None, company_name="ETHEREUM", type="CRYPTO")
-    # manager.add_transaction(symbol="ADA-USD", quantity=1492.884029, cost_basis=0.34, date=None, company_name="CARDANO", type="CRYPTO")
-    # manager.add_transaction(symbol="BTC-USD", quantity=0.20302474, cost_basis=16941.42, date=None, company_name="BITCOIN", type="CRYPTO")
-
     app.run(debug=True)
