@@ -1,7 +1,7 @@
 from flask import Flask, render_template, jsonify, request
 import yfinance as yf
 from datetime import datetime, timedelta
-
+import pandas as pd
 from portfolio_data_manager import PortfolioDataManager
 import finnhub
 import os
@@ -42,6 +42,31 @@ def intraday_equity():
     start = end - timedelta(days=days)
 
     equity_points = {}
+    # tickers = list(manager.get_current_holdings().keys())
+    # price_data = yf.download(tickers=tickers, interval=interval, start=start, end=end, auto_adjust=False)
+    
+    # # Cache current holdings
+    # holdings = manager.get_current_holdings()
+
+    # # Only keep columns for current holdings
+    # price_data = price_data['Close'][list(holdings.keys())]
+    # price_data = price_data.fillna(0)
+
+    # # Multiply each column by the quantity held
+    # for symbol, qty in holdings.items():
+    #     price_data[symbol] = price_data[symbol] * qty
+
+    # # Sum across columns (each row is total equity on that date)
+    # price_data['equity'] = price_data.sum(axis=1)
+
+    # # Return as list of dicts with timestamp
+    # equity_history = [
+    #     {"time": int(pd.Timestamp(ts).timestamp()), "equity": round(equity, 2)}
+    #     for ts, equity in zip(price_data.index, price_data['equity'])
+    # ]
+
+    # return jsonify(equity_history)
+
     for asset, quantity in manager.get_current_holdings().items():
         if asset in ['USDT', 'ETH', 'ADA']:  # skip crypto for now unless mapped
             continue
@@ -78,5 +103,5 @@ if __name__ == '__main__':
     # manager.add_transaction(symbol="ADA-USD", quantity=1492.884029, cost_basis=0.34, date=None, company_name="CARDANO")
     # manager.add_transaction(symbol="BTC-USD", quantity=0.20302474, cost_basis=16941.42, date=None, company_name="BITCOIN")
 
-
     app.run(debug=True)
+    intraday_equity()

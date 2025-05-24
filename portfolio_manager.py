@@ -10,6 +10,7 @@ import finnhub
 import time
 import uuid
 from zoneinfo import ZoneInfo
+import pandas_market_calendars as mcal
 load_dotenv()
 
 finnhub_key = os.getenv("FINNHUB_API_KEY")
@@ -39,6 +40,12 @@ class PortfolioManager:
               "cost_basis": cost_basis, "date": date, "transactionId": str(uuid.uuid4())}
         self.transactions = pd.concat([self.transactions, pd.DataFrame([tx])], ignore_index=True)
         self._save_transactions()
+        
+    def remove_transaction(self, transaction_id: str):
+        index_to_delete = self.transactions[self.transactions['transactionId'] ==  transaction_id].index
+        self.transactions.drop(index_to_delete, inplace=True)
+        self._save_transactions()
+
 
     def get_transactions(self, symbol: str = None) -> pd.DataFrame:
         df = self.transactions.copy()
@@ -154,50 +161,47 @@ class PortfolioManager:
         data = pd.concat(frames, axis=1).sort_index().fillna(0)
         return data
 
-    def compute_equity_history(self, period: str = "5y") -> pd.DataFrame:
+    def compute_equity_history(self, period: str = "5y") -> list[dict]:
         price_data = self._load_all_price_data(period)
 
-        equity_history = []
+        # Cache current holdings
+        holdings = self.get_current_holdings()
 
-        for date_entry in price_data.index:
-            total_equity = 0
-            for symbol, quantity in self.get_current_holdings().items():
-                try:
-                    price = price_data[symbol][datetime.strftime(date_entry, '%Y-%m-%d')]
-                    total_equity += float(price.iloc[0]) * quantity
-                except KeyError as e:
-                    raise Exception(e)
-            equity_history.append({"time": int(pd.Timestamp(date_entry).timestamp()), "equity": round(total_equity, 2)})
-            
+        # Only keep columns for current holdings
+        price_data = price_data[list(holdings.keys())]
+        
+        # Get rid of weekends. We dont have data 
+        price_data = price_data[price_data.index.day_of_week < 5]
+
+        # Multiply each column by the quantity held
+        for symbol, qty in holdings.items():
+            price_data[symbol] = price_data[symbol] * qty
+
+        # Sum across columns (each row is total equity on that date)
+        columns = price_data.columns
+        price_data['date'] = price_data.index.date
+        daily_aggregated_values = price_data.groupby('date')[columns].sum()
+        price_data = price_data.drop(columns=['date'])
+        price_data['equity'] = daily_aggregated_values.sum(axis=1)
+                
+        price_data['equity'].dropna(inplace=True)
+                
+        price_data['equity_pct_change'] = price_data['equity'].pct_change()
+
+        # Identify rows where the equity dropped by more than 10%
+        # This gets rid of trading holidays. We dont have data from weekends or holidays
+        rows_to_drop = price_data[price_data['equity_pct_change'] < -0.10].index
+        price_data.drop(rows_to_drop, inplace=True)
+        price_data_cleaned = price_data.drop(columns=['equity_pct_change'])
+        equity = price_data_cleaned['equity'].dropna()
+        
+        # Return as list of dicts with timestamp
+        equity_history = [
+            {"time": int(pd.Timestamp(ts).timestamp()), "equity": round(equity, 2)}
+            for ts, equity in zip(equity.index, equity)
+        ]
+
         return equity_history
-    
-    #TODO: optimize this function:
-    # def compute_equity_history(self, period: str = "5y") -> list[dict]:
-    #     price_data = self._load_all_price_data(period)
-
-    #     # Ensure datetime index is sorted and standardized
-    #     price_data.index = pd.to_datetime(price_data.index)
-
-    #     # Cache current holdings
-    #     holdings = self.get_current_holdings()
-
-    #     # Only keep columns for current holdings
-    #     price_data = price_data[list(holdings.keys())]
-
-    #     # Multiply each column by the quantity held
-    #     for symbol, qty in holdings.items():
-    #         price_data[symbol] = price_data[symbol] * qty
-
-    #     # Sum across columns (each row is total equity on that date)
-    #     price_data['equity'] = price_data.sum(axis=1)
-
-    #     # Return as list of dicts with timestamp
-    #     equity_history = [
-    #         {"time": int(ts.timestamp()), "equity": round(equity, 2)}
-    #         for ts, equity in zip(price_data.index, price_data['equity'])
-    #     ]
-
-    #     return equity_history
 
 
     def transaction_pnl(self, symbol: str = None) -> pd.DataFrame:
@@ -309,7 +313,7 @@ class PortfolioManager:
                 "price": price,
                 "quantity": round(total_quantity, 4),
                 "dayGain": round(day_gain, 2),
-                "dayGainPercent": abs(round(day_gain_percent, 2)),
+                "dayGainPercent": round(day_gain_percent, 2),
                 "value": value,
                 "purchases": purchases_detail
             })
@@ -327,6 +331,7 @@ if __name__ == '__main__':
     # print(manager.get_transactions(symbol="TSLA"))
     # print(manager.portfolio_pnl())
     # print(manager.transaction_pnl(symbol="TSLA"))
-    # print(manager.compute_equity_history())
-    print(manager.get_portfolio_info())
+    print(manager.compute_equity_history())
+    
+    # print(manager.get_portfolio_info())
     

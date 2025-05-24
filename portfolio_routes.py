@@ -27,6 +27,12 @@ def add_transaction():
     manager.add_transaction(symbol, quantity, cost_basis, date, company_name)
     return jsonify({"message": f"Transaction added for {symbol.upper()}."})
 
+
+@app.route("/api/transactions/<id>", methods=["DELETE"])
+def delete_trasaction(id):
+    response = manager.remove_transaction(id)
+    return jsonify({"message": f"Transaction deleted for {id}."})
+
 @app.route("/api/portfolio", methods=["GET"])
 def get_portfolio_info():
     response = manager.get_portfolio_info()
