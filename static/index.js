@@ -890,3 +890,146 @@ async function fetchPortfolioDataOnFirstLoad() {
   }
 }
 
+let fullData = [];
+
+fetch("/api/equity")
+  .then((res) => res.json())
+  .then((data) => {
+    fullData = data.map((d) => ({
+      x: new Date(d.time * 1000),
+      y: d.equity,
+    }));
+    drawChart(fullData);
+  });
+
+let chart;
+
+function drawChart(seriesData) {
+  const options = {
+    chart: {
+      type: "area",
+      height: 400,
+      zoom: { enabled: true },
+      toolbar: { show: false },
+      stacked: false,
+    },
+    toolbar: {
+      autoSelected: "zoom",
+    },
+    dataLabels: {
+      enabled: false,
+    },
+    series: [
+      {
+        name: "Equity Value",
+        data: seriesData,
+      },
+    ],
+    xaxis: {
+      type: "datetime",
+      labels: {
+        datetimeFormatter: {
+          year: "yyyy",
+          month: "MMM 'yy",
+          day: "dd MMM",
+          hour: "HH:mm",
+          minute: "HH:mm",
+        },
+      },
+    },
+    yaxis: {
+      labels: {
+        formatter: (val) => `$${val.toFixed(0)}`,
+      },
+    },
+    tooltip: {
+      x: { format: "MMM dd, yyyy HH:mm" },
+      y: {
+        formatter: (val) => `$${val.toFixed(2)}`,
+      },
+    },
+    stroke: {
+      curve: "smooth",
+      width: 2,
+    },
+    colors: ["#0f9d58"],
+    fill: {
+      type: "gradient",
+      gradient: {
+        shadeIntensity: 1,
+        opacityFrom: 0.4,
+        opacityTo: 0.05,
+        stops: [0, 90, 100],
+      },
+    },
+  };
+
+  chart = new ApexCharts(document.querySelector("#chart"), options);
+  chart.render();
+}
+function changeRange(button, range) {
+    // Remove highlight classes from all buttons
+    document.querySelectorAll('#time-range-buttons button').forEach(btn => {
+      btn.classList.remove('bg-blue-100', 'text-blue-700');
+    });
+
+    // Add highlight classes to the clicked button
+    button.classList.add('bg-blue-100', 'text-blue-700');
+
+    // Optionally handle the range change logic
+    console.log("Selected range:", range);
+
+  const now = new Date();
+  let from;
+
+  if (range === "1D" || range === "1W") {
+    url =
+      range === "1D"
+        ? "/api/equity/intraday?days=1&interval=1m"
+        : "/api/equity/intraday?days=7&interval=30m";
+    fetch(url)
+      .then((res) => res.json())
+      .then((data) => {
+        const cutoff =
+          range === "1D"
+            ? Date.now() - 24 * 60 * 60 * 1000
+            : Date.now() - 5 * 24 * 60 * 60 * 1000;
+
+        const filtered = data
+          .map((d) => ({ x: new Date(d.time * 1000), y: d.equity }))
+          .filter((d) => d.x.getTime() >= cutoff);
+
+        chart.updateSeries([{ data: filtered }]);
+      });
+    return;
+  }
+
+  switch (range) {
+    case "1M":
+      from = new Date();
+      from.setMonth(from.getMonth() - 1);
+      break;
+    case "3M":
+      from = new Date();
+      from.setMonth(from.getMonth() - 3);
+      break;
+    case "6M":
+      from = new Date();
+      from.setMonth(from.getMonth() - 6);
+      break;
+    case "1Y":
+      from = new Date();
+      from.setFullYear(from.getFullYear() - 1);
+      break;
+    case "3Y":
+      from = new Date();
+      from.setFullYear(from.getFullYear() - 3);
+      break;
+    case "ALL":
+      chart.updateSeries([{ data: fullData }]);
+      return;
+  }
+
+  const filtered = fullData.filter((d) => d.x >= from);
+  chart.updateSeries([{ data: filtered }]);
+}

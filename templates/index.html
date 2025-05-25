@@ -1,132 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+        integrity="sha512-iBBXm8fW90+nuLcSKlbmrPcLa0OT92xO1BIsZ+ywDWZCvqsWgccV3gFoRBv0z+8dLJgyAHIhR35VZc2oM/gI1w=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
 
 
     <title>Portfolio Tracker</title>
     <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
 
 </head>
+
 <body class="min-h-screen bg-gray-100 p-4 font-sans antialiased">
-
-<script>
-let fullData = [];
-
-fetch('/api/equity')
-    .then(res => res.json())
-    .then(data => {
-        fullData = data.map(d => ({
-            x: new Date(d.time * 1000),
-            y: d.equity
-        }));
-        drawChart(fullData);
-    });
-
-let chart;
-
-function drawChart(seriesData) {
-    const options = {
-        chart: {
-            type: 'area',
-            height: 400,
-            zoom: { enabled: true },
-            toolbar: { show: false },
-            stacked: false,
-
-        },
-        toolbar: {
-            autoSelected: 'zoom'
-          },
-          dataLabels: {
-          enabled: false
-        },
-        series: [{
-            name: 'Equity Value',
-            data: seriesData
-        }],
-        xaxis: {
-            type: 'datetime',
-            labels: {
-                datetimeFormatter: {
-                    year: 'yyyy',
-                    month: "MMM 'yy",
-                    day: 'dd MMM',
-                    hour: "HH:mm",
-                    minute: "HH:mm",
-                }
-            }
-        },
-        yaxis: {
-            labels: {
-                formatter: val => `$${val.toFixed(0)}`
-            }
-        },
-        tooltip: {
-            x: { format: 'MMM dd, yyyy HH:mm' },
-            y: {
-                formatter: val => `$${val.toFixed(2)}`
-            }
-        },
-        stroke: {
-            curve: 'smooth',
-            width: 2
-        },
-        colors: ['#0f9d58'],
-        fill: {
-            type: 'gradient',
-            gradient: {
-                shadeIntensity: 1,
-                opacityFrom: 0.4,
-                opacityTo: 0.05,
-                stops: [0, 90, 100]
-            }
-        }
-    };
-
-    chart = new ApexCharts(document.querySelector("#chart"), options);
-    chart.render();
-}
-function changeRange(range) {
-    const now = new Date();
-    let from;
-
-    if (range === '1D' || range === '1W') {
-        url = range === '1D' ? '/api/equity/intraday?days=1&interval=1m' : '/api/equity/intraday?days=7&interval=30m'
-        fetch(url)
-            .then(res => res.json())
-            .then(data => {
-                const cutoff = range === '1D'
-                    ? Date.now() - 24 * 60 * 60 * 1000
-                    : Date.now() - 5 * 24 * 60 * 60 * 1000;
-
-                const filtered = data
-                    .map(d => ({ x: new Date(d.time * 1000), y: d.equity }))
-                    .filter(d => d.x.getTime() >= cutoff);
-
-                chart.updateSeries([{ data: filtered }]);
-            });
-        return;
-    }
-
-
-    switch (range) {
-        case '1M': from = new Date(); from.setMonth(from.getMonth() - 1); break;
-        case '3M': from = new Date(); from.setMonth(from.getMonth() - 3); break;
-        case '6M': from = new Date(); from.setMonth(from.getMonth() - 6); break;
-        case '1Y': from = new Date(); from.setFullYear(from.getFullYear() - 1); break;
-        case '3Y': from = new Date(); from.setFullYear(from.getFullYear() - 3); break;
-        case 'ALL': chart.updateSeries([{ data: fullData }]); return;
-    }
-
-    const filtered = fullData.filter(d => d.x >= from);
-    chart.updateSeries([{ data: filtered }]);
-}
-</script>
     <div class="max-w-6xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
         <div class="bg-white rounded-lg shadow-lg p-6 mb-4">
             <div class="flex items-start justify-between mb-2">
@@ -143,7 +33,7 @@ function changeRange(range) {
             </div>
 
             <div class="flex flex-col md:flex-row gap-4 mb-4">
-    <div class="w-full md:w-2/3">
+                <div class="w-full md:w-2/3">
                     <div id="chart"></div>
                 </div>
 
@@ -153,28 +43,16 @@ function changeRange(range) {
                     </div>
                 </div>
             </div>
-            <!-- <div class="flex flex-col md:flex-row gap-4 mb-4">
 
-                <div
-                    class="w-full md:w-2/3 h-40 bg-gray-100 rounded-md flex items-center justify-center text-gray-400 text-sm">
-                    <div id="chart"></div>
-                </div>
-
-                <div class="w-full md:w-1/3 pt-4 md:pt-0 md:border-l md:border-gray-200 md:pl-4">
-                    <h4 class="text-sm font-semibold text-gray-500 uppercase mb-2">Portfolio highlights</h4>
-                    <div id="portfolio-highlights-list">
-                    </div>
-                </div>
-            </div> -->
-
-            <div class="flex justify-center space-x-2 text-sm font-medium text-gray-600 mb-4">
-                <button class="px-3 py-1 rounded-full bg-blue-100 text-blue-700" onclick="changeRange('1D')">1D</button>
-                <button class="px-3 py-1 rounded-full hover:bg-gray-200" onclick="changeRange('1W')">1W</button>
-                <button class="px-3 py-1 rounded-full hover:bg-gray-200" onclick="changeRange('3M')">1M</button>
-                <button class="px-3 py-1 rounded-full hover:bg-gray-200" onclick="changeRange('6M')">6M</button>
-                <button class="px-3 py-1 rounded-full hover:bg-gray-200" onclick="changeRange('1Y')">1Y</button>
-                <button class="px-3 py-1 rounded-full hover:bg-gray-200" onclick="changeRange('3Y')">3Y</button>
-                <button class="px-3 py-1 rounded-full hover:bg-gray-200" onclick="changeRange('ALL')">MAX</button>
+            <div id="time-range-buttons" class="flex justify-center space-x-2 text-sm font-medium text-gray-600 mb-4">
+                <button class="px-3 py-1 rounded-full hover:bg-gray-200" onclick="changeRange(this, '1D')">1D</button>
+                <button class="px-3 py-1 rounded-full hover:bg-gray-200" onclick="changeRange(this, '1W')">1W</button>
+                <button class="px-3 py-1 rounded-full hover:bg-gray-200" onclick="changeRange(this, '3M')">1M</button>
+                <button class="px-3 py-1 rounded-full hover:bg-gray-200" onclick="changeRange(this, '6M')">6M</button>
+                <button class="px-3 py-1 rounded-full hover:bg-gray-200" onclick="changeRange(this, '1Y')">1Y</button>
+                <button class="px-3 py-1 rounded-full hover:bg-gray-200" onclick="changeRange(this, '3Y')">3Y</button>
+                <button class="px-3 py-1 rounded-full bg-blue-100 text-blue-700"
+                    onclick="changeRange('ALL')">ALL</button>
             </div>
 
             <div class="grid grid-cols-2 gap-4 mb-4">
@@ -197,25 +75,45 @@ function changeRange(range) {
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center justify-between mb-4">
                 <div class="flex space-x-4">
-                    <button class="px-4 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded-full hover:bg-blue-50">Investments</button>
+                    <button
+                        class="px-4 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded-full hover:bg-blue-50">Investments</button>
                 </div>
                 <div class="flex items-center space-x-4">
                     <div class="relative" id="sort-dropdown-container">
-                        <button id="sort-button" class="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
-                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path></svg>
+                        <button id="sort-button"
+                            class="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"></path>
+                            </svg>
                             <span id="sort-criteria-text">Sort by Symbol</span>
-                            <svg class="w-4 h-4 ml-1 transition-transform duration-200" id="sort-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            <svg class="w-4 h-4 ml-1 transition-transform duration-200" id="sort-arrow" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7"></path>
+                            </svg>
                         </button>
-                        <div id="sort-dropdown-menu" class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 hidden">
-                            <button class="block px-4 py-2 text-sm text-gray-700 w-full text-left hover:bg-gray-100" data-sort-by="symbol">Sort by Symbol</button>
-                            <button class="block px-4 py-2 text-sm text-gray-700 w-full text-left hover:bg-gray-100" data-sort-by="price">Sort by Price</button>
-                            <button class="block px-4 py-2 text-sm text-gray-700 w-full text-left hover:bg-gray-100" data-sort-by="dayGain">Sort by Day Gain</button>
-                            <button class="block px-4 py-2 text-sm text-gray-700 w-full text-left hover:bg-gray-100" data-sort-by="quantity">Sort by Quantity</button>
+                        <div id="sort-dropdown-menu"
+                            class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 hidden">
+                            <button class="block px-4 py-2 text-sm text-gray-700 w-full text-left hover:bg-gray-100"
+                                data-sort-by="symbol">Sort by Symbol</button>
+                            <button class="block px-4 py-2 text-sm text-gray-700 w-full text-left hover:bg-gray-100"
+                                data-sort-by="price">Sort by Price</button>
+                            <button class="block px-4 py-2 text-sm text-gray-700 w-full text-left hover:bg-gray-100"
+                                data-sort-by="dayGain">Sort by Day Gain</button>
+                            <button class="block px-4 py-2 text-sm text-gray-700 w-full text-left hover:bg-gray-100"
+                                data-sort-by="quantity">Sort by Quantity</button>
                         </div>
                     </div>
 
-                    <button id="add-investment-btn" class="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-full hover:bg-blue-700">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    <button id="add-investment-btn"
+                        class="flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-full hover:bg-blue-700">
+                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                            xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4">
+                            </path>
+                        </svg>
                         Investment
                     </button>
                 </div>
@@ -227,50 +125,79 @@ function changeRange(range) {
                 <div class="col-span-2 text-right">Quantity</div>
                 <div class="col-span-2 text-right">
                     <div class="relative inline-block text-left" id="gain-view-dropdown-container">
-                        <button id="gain-view-button" class="flex items-center text-xs font-semibold text-gray-500 uppercase tracking-wider focus:outline-none">
+                        <button id="gain-view-button"
+                            class="flex items-center text-xs font-semibold text-gray-500 uppercase tracking-wider focus:outline-none">
                             <span id="gain-header-text">Day Gain</span>
-                            <svg class="w-3 h-3 ml-1 transition-transform duration-200" id="gain-view-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                            <svg class="w-3 h-3 ml-1 transition-transform duration-200" id="gain-view-arrow" fill="none"
+                                stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M19 9l-7 7-7-7"></path>
+                            </svg>
                         </button>
-                        <div id="gain-view-dropdown-menu" class="absolute right-0 mt-2 w-32 bg-white rounded-md shadow-lg py-1 z-10 hidden">
-                            <button class="block px-4 py-2 text-sm text-gray-700 w-full text-left hover:bg-gray-100" data-gain-type="day">Day Gain</button>
-                            <button class="block px-4 py-2 text-sm text-gray-700 w-full text-left hover:bg-gray-100" data-gain-type="total">Total Gain</button>
+                        <div id="gain-view-dropdown-menu"
+                            class="absolute right-0 mt-2 w-32 bg-white rounded-md shadow-lg py-1 z-10 hidden">
+                            <button class="block px-4 py-2 text-sm text-gray-700 w-full text-left hover:bg-gray-100"
+                                data-gain-type="day">Day Gain</button>
+                            <button class="block px-4 py-2 text-sm text-gray-700 w-full text-left hover:bg-gray-100"
+                                data-gain-type="total">Total Gain</button>
                         </div>
                     </div>
-                </div>                
+                </div>
                 <div class="col-span-2 text-right">Value</div>
             </div>
         </div>
 
         <div id="investment-list" class="divide-y divide-gray-200">
-            </div>
+        </div>
     </div>
 
-    <div id="new-transaction-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-40 hidden">
+    <div id="new-transaction-modal"
+        class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-40 hidden">
         <div class="bg-white p-6 rounded-lg shadow-xl max-w-md w-full relative">
             <button id="close-new-transaction-modal" class="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                    </path>
+                </svg>
             </button>
             <h2 class="text-2xl font-bold mb-4 text-gray-800">Add New Transaction</h2>
             <form id="new-transaction-form" class="space-y-4">
                 <div>
-                    <label for="new-transaction-symbol" class="block text-sm font-medium text-gray-700">Symbol Name</label>
-                    <input type="text" id="new-transaction-symbol" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g., VTI, MSFT" autocomplete="off">
-                    <div id="symbol-suggestions" class="absolute z-10 w-full bg-white border border-gray-200 rounded-md shadow-lg mt-1 max-h-48 overflow-y-auto hidden"></div>                </div>
-                <div>
-                    <label for="new-transaction-date" class="block text-sm font-medium text-gray-700">Purchase Date</label>
-                    <input type="date" id="new-transaction-date" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                    <label for="new-transaction-symbol" class="block text-sm font-medium text-gray-700">Symbol
+                        Name</label>
+                    <input type="text" id="new-transaction-symbol"
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        placeholder="e.g., VTI, MSFT" autocomplete="off">
+                    <div id="symbol-suggestions"
+                        class="absolute z-10 w-full bg-white border border-gray-200 rounded-md shadow-lg mt-1 max-h-48 overflow-y-auto hidden">
+                    </div>
                 </div>
                 <div>
-                    <label for="new-transaction-cost-basis" class="block text-sm font-medium text-gray-700">Cost Basis (per share)</label>
-                    <input type="number" id="new-transaction-cost-basis" step="0.01" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g., 150.25">
+                    <label for="new-transaction-date" class="block text-sm font-medium text-gray-700">Purchase
+                        Date</label>
+                    <input type="date" id="new-transaction-date"
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
                 </div>
                 <div>
-                    <label for="new-transaction-quantity" class="block text-sm font-medium text-gray-700">Quantity</label>
-                    <input type="number" id="new-transaction-quantity" step="0.0001" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm" placeholder="e.g., 10.5">
+                    <label for="new-transaction-cost-basis" class="block text-sm font-medium text-gray-700">Cost Basis
+                        (per share)</label>
+                    <input type="number" id="new-transaction-cost-basis" step="0.01"
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        placeholder="e.g., 150.25">
+                </div>
+                <div>
+                    <label for="new-transaction-quantity"
+                        class="block text-sm font-medium text-gray-700">Quantity</label>
+                    <input type="number" id="new-transaction-quantity" step="0.0001"
+                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        placeholder="e.g., 10.5">
                 </div>
                 <div class="flex justify-end space-x-3">
-                    <button type="button" id="cancel-new-transaction" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">Cancel</button>
-                    <button type="submit" id="submit-new-transaction" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Add Transaction</button>
+                    <button type="button" id="cancel-new-transaction"
+                        class="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">Cancel</button>
+                    <button type="submit" id="submit-new-transaction"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">Add Transaction</button>
                 </div>
             </form>
         </div>
@@ -281,10 +208,12 @@ function changeRange(range) {
             <h3 id="message-box-title" class="text-lg font-semibold mb-3"></h3>
             <p id="message-box-content" class="text-gray-700 mb-4"></p>
             <div class="flex justify-end">
-                <button id="message-box-close" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">OK</button>
+                <button id="message-box-close"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">OK</button>
             </div>
         </div>
     </div>
     <script src="{{url_for('static', filename='index.js')}}"></script>
 </body>
+
 </html>

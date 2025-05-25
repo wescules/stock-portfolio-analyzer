@@ -48,7 +48,6 @@ class PortfolioManager:
         self.transactions.drop(index_to_delete, inplace=True)
         self._save_transactions()
 
-
     def get_transactions(self, symbol: str = None) -> pd.DataFrame:
         df = self.transactions.copy()
         if symbol:
