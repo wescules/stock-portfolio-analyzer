@@ -889,3 +889,4 @@ async function fetchPortfolioDataOnFirstLoad() {
     return [];
   }
 }
+
