@@ -18,11 +18,11 @@ I'm sick of schwab, google/yahoo finance, and other portfolio analyzers. They su
 
 #### ✅ Features:
 
-* [ ] Add/edit/remove holdings (stocks, ETFs, crypto)
-* [ ] Add/edit/remove cash transactions (deposits, withdrawals, dividends)
-* [ ] Calculate current portfolio value (including cash)
-* [ ] Use **live & extended-hours prices**
-* [ ] Track average cost, P/L %, and net worth over time
+* ✅ Add/edit/remove holdings (stocks, ETFs, crypto)
+* ✅ Add/edit/remove cash transactions (deposits, withdrawals, dividends)
+* ✅ Calculate current portfolio value (including cash)
+* ✅ Use **live & extended-hours prices**
+* ✅ Track average cost, P/L %, and net worth over time
 * [ ] Import from CSV (optional)
 
 #### 📦 Tools:
@@ -67,8 +67,8 @@ I'm sick of schwab, google/yahoo finance, and other portfolio analyzers. They su
 #### 📦 APIs:
 
 * [ ] [Marketaux](https://www.marketaux.com/) — news
-* [ ] [Finnhub](https://finnhub.io/) — earnings & news
-* [ ] [Yahoo Finance API](https://pypi.org/project/yahooquery/) — free data
+* ✅ [Finnhub](https://finnhub.io/) — earnings & news
+* ✅ [Yahoo Finance API](https://pypi.org/project/yahooquery/) — free data
 
 ---
 
@@ -78,9 +78,9 @@ I'm sick of schwab, google/yahoo finance, and other portfolio analyzers. They su
 
 #### ✅ Features:
 
-* [ ] Asset allocation by category (stocks, cash, crypto, etc.)
+* ✅ Asset allocation by category (stocks, cash, crypto, etc.)
 * [ ] Sector exposure
 * [ ] Geographical breakdown
 * [ ] Heatmap of returns
-* [ ] P/L timeline (line chart)
+* ✅ P/L timeline (line chart)
 
