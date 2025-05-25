@@ -750,7 +750,10 @@ function submitNewTransaction(event) {
 // Function to fetch data and render, which will be called repeatedly
 async function pollInvestments() {
   console.log("Fetching investments..."); // For debugging
-  const apiData = investments.length < 1 ? await fetchPortfolioDataOnFirstLoad() : await fetchDataFromAPI() ;
+  const apiData =
+    investments.length < 1
+      ? await fetchPortfolioDataOnFirstLoad()
+      : await fetchDataFromAPI();
   if (apiData.positions.length > 0) {
     // Only update if data was successfully fetched
     // Clear the existing sample data and populate with API data
