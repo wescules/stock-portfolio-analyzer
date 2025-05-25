@@ -22,6 +22,10 @@ import portfolio_routes
 def index():
     return render_template('index.html')
 
+@app.route('/finvis')
+def finvis():
+    return render_template('finvis.html')
+
 
 @app.route('/api/equity')
 def equity():

@@ -1,0 +1,129 @@
+/* Custom font family */
+body {
+  font-family: "Inter", sans-serif;
+}
+/* Custom scrollbar for better aesthetics */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Adjustments for spacing */
+.p-6 {
+  padding: 1.25rem; /* Slightly reduced overall padding */
+}
+.mb-4 {
+  margin-bottom: 0.75rem; /* Reduced main button group margin */
+}
+.space-x-4 > * + * {
+  margin-left: 0.75rem; /* Reduced horizontal space between top buttons */
+}
+.px-4 {
+  padding-left: 0.75rem; /* Reduced horizontal padding for buttons */
+  padding-right: 0.75rem;
+}
+.py-2 {
+  padding-top: 0.375rem; /* Reduced vertical padding for buttons */
+  padding-bottom: 0.375rem;
+}
+.mr-1 {
+  margin-right: 0.125rem; /* Slightly reduced margin for icons */
+}
+.ml-1 {
+  margin-left: 0.125rem; /* Slightly reduced margin for icons */
+}
+.py-4 {
+  padding-top: 0.75rem; /* Reduced vertical padding for investment rows */
+  padding-bottom: 0.75rem;
+}
+.px-6 {
+  padding-left: 1rem; /* Adjusted horizontal padding for investment rows */
+  padding-right: 1rem;
+}
+.mb-2 {
+  margin-bottom: 0.25rem; /* Reduced margin for purchase history header */
+}
+.py-2 {
+  /* Re-declared to be more specific to purchase rows */
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+.ml-2 {
+  margin-left: 0.375rem; /* Adjusted margin for delete button */
+}
+.mt-4 {
+  margin-top: 0.5rem; /* Reduced margin for "Record another purchase" button */
+}
+.mr-3 {
+  margin-right: 0.5rem; /* Adjusted margin for symbol circle */
+}
+.space-y-4 {
+  margin-top: 0; /* Ensure no extra top margin on form */
+  margin-bottom: 1rem; /* Adjusted bottom margin for form groups */
+}
+.mt-1 {
+  margin-top: 0.125rem; /* Reduced top margin for input fields */
+}
+.space-x-3 > * + * {
+  margin-left: 0.5rem; /* Reduced space between modal buttons */
+}
+
+/* Style for the percentage gain/loss */
+.day-gain-percent-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.1rem 0.4rem; /* Adjusted padding */
+  border-radius: 0.25rem; /* Rounded corners */
+  font-size: 0.75rem; /* Smaller font size */
+  font-weight: 500; /* Slightly bolder */
+  color: white; /* White text */
+  margin-left: 0.25rem; /* Small left margin */
+}
+
+/* Dynamic background color based on gain/loss */
+/* Changed from '>' to space to target descendant elements */
+.text-green-600 .day-gain-percent-box {
+  background-color: #81c995; /* Softer green */
+}
+
+.text-red-600 .day-gain-percent-box {
+  background-color: #f87171; /* Softer red */
+}
+
+/* Add a default style for zero change or neutral cases */
+.text-gray-800 .day-gain-percent-box {
+  background-color: #e5e7eb; /* A light gray for neutral change */
+  color: #4b5563; /* Darker text for contrast on light gray */
+}
+
+#chart {
+  max-width: 900px;
+  margin: auto;
+}
+.buttons {
+  text-align: center;
+  margin-top: 1rem;
+}
+.buttons button {
+  margin: 0 5px;
+  padding: 0.5rem 1rem;
+  font-weight: bold;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background: white;
+  cursor: pointer;
+}
+.buttons button:hover {
+  background: #eee;
+}

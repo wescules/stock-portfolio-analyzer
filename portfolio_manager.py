@@ -20,9 +20,10 @@ client = finnhub.Client(api_key=finnhub_key)
 
 
 class PortfolioManager:
-    def __init__(self, data_dir="data", tx_file="transactions.json"):
+    def __init__(self, data_dir="data", tx_file="transactions.json", portfolio_cache_file="portfolio_cache.json"):
         self.data_dir = data_dir
         self.tx_file = os.path.join(data_dir, tx_file)
+        self.portfolio_cache_file = os.path.join(data_dir, portfolio_cache_file)
         os.makedirs(self.data_dir, exist_ok=True)
         self.transactions = self._load_transactions()
 
@@ -61,26 +62,19 @@ class PortfolioManager:
             holdings[sym] = holdings.get(sym, 0) + tx['quantity']
         return {s: q for s, q in holdings.items() if q != 0}
 
-    def _read_cached_csv(self, csv_path: str) -> pd.DataFrame:
-        """Read CSV with potential multi-index headers and flatten columns"""
+    def _read_cached_json(self, json_path: str) -> pd.DataFrame:
+        """Read JSON with potential multi-index headers and flatten columns"""
         try:
-            df = pd.read_json(csv_path)
+            df = pd.read_json(json_path)
         except (ValueError, pd.errors.ParserError):
             # Fallback for single-level header
-            df = pd.read_json(csv_path)
+            df = pd.read_json(json_path)
         return df
 
     def _get_price_data(self, symbol: str, period: str = "5y") -> pd.DataFrame:
-        csv_path = os.path.join(self.data_dir, f"{symbol}.json")
-        if os.path.exists(csv_path):
-            df = self._read_cached_csv(csv_path)
-            # last_date = pd.to_datetime(df.index[-1]).date()
-            # today = datetime.today().date()
-            # if last_date < today:
-            #     if 'USD' in symbol: # ignore crypto for now
-            #         return df
-            #     new_data, new_index = self.get_realtime_quote(symbol)
-            #     df.loc[new_index] = new_data
+        json_path = os.path.join(self.data_dir, f"{symbol}.json")
+        if os.path.exists(json_path):
+            df = self._read_cached_json(json_path)
             return df
         # No cache: download full period
         print("Downloading and saving 5y of price data for " + symbol)
@@ -107,8 +101,7 @@ class PortfolioManager:
                 print(f"Retrying in {wait:.1f} seconds...")
                 time.sleep(wait)
 
-        # df.to_csv(csv_path)
-        df.to_json(csv_path)
+        df.to_json(json_path)
         return df
 
     def get_latest_crypto_price(self, ticker):
@@ -213,7 +206,6 @@ class PortfolioManager:
 
         return equity_history
 
-
     def transaction_pnl(self, symbol: str = None) -> pd.DataFrame:
         txs = self.get_transactions(symbol)
         if txs.empty:
@@ -276,6 +268,11 @@ class PortfolioManager:
         ny_time = datetime.now(ZoneInfo("America/New_York"))
         # I'm not in the US so I need this
         return now.date() > ny_time.date()
+    
+    def get_portfolio_info_from_cache(self):
+        with open(self.portfolio_cache_file) as f:
+            return json.load(f)
+        return {}
         
     def get_portfolio_info(self):
         grouped_dict = {
@@ -320,7 +317,7 @@ class PortfolioManager:
 
                 purchases_detail.append({
                     "transactionId": p["transactionId"],
-                    "date": p["date"],
+                    "date": str(p["date"]),
                     "purchasePrice": basis,
                     "quantity": qty,
                     "value": round(market_value, 2),
@@ -355,8 +352,8 @@ class PortfolioManager:
             {"name": k, "percent": round(v / total_value * 100, 1), "value": round(v, 2)}
             for k, v in type_breakdown.items()
         ]
-
-        return {
+        
+        portfolio_info = {
             "balance": round(total_value, 2),
             "dayChange": round(total_day_gain, 2),
             "dayPercent": round(day_percent, 2),
@@ -366,6 +363,11 @@ class PortfolioManager:
             "portfolioHighlights": portfolio_highlights,
             "positions": response
         }
+
+        with open(self.portfolio_cache_file, 'w') as f:
+            json.dump(portfolio_info, f)
+
+        return portfolio_info
 
 
 
