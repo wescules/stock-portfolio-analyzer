@@ -65,7 +65,7 @@ def intraday_equity():
     end = datetime.utcnow()
     start = end - timedelta(days=days)
 
-    holdings = manager.get_current_holdings()
+    holdings = manager.get_positions()
 
     # Only keep columns for current holdings
     price_data = yf.download(tickers=set(holdings.keys()), interval=interval, start=start, end=end, auto_adjust=False, prepost=False)
@@ -127,3 +127,28 @@ if __name__ == '__main__':
     # manager.add_transaction(symbol="BTC-USD", quantity=0.20302474, cost_basis=16941.42, date=None, company_name="BITCOIN", type="CRYPTO", action="buy")
     # manager.add_transaction(symbol="USDT-USD", quantity=298711.14, cost_basis=1.00, date=None, company_name="Tether", type="CASH", action="buy")
     app.run(debug=True)
+
+
+
+        # self.portfolio.buy(symbol="AAPL", quantity=10.1871, price=160.80, date=None, company_name="APPLE INC", security_type="Equity")
+        # self.portfolio.buy(symbol="HOOD", quantity=500, price=63.14, date=None, company_name="ROBINHOOD MKTS INC CLA...", security_type="Equity")
+        # self.portfolio.buy(symbol="META", quantity=248.2124, price=172.60, date=None, company_name="META PLATFORMS INC CLAS...", security_type="Equity")
+        # self.portfolio.buy(symbol="GOOG", quantity=90.1075, price=201.19, date=None, company_name="ALPHABET INC CLASS C", security_type="Equity")
+        # self.portfolio.buy(symbol="ATYR", quantity=1000, price=3.04, date=None, company_name="ATYR PHARMA INC", security_type="Equity")
+        # self.portfolio.buy(symbol="V", quantity=184.2974, price=180.54, date=None, company_name="VISA INC CLASS A", security_type="Equity")
+        # self.portfolio.buy(symbol="V", quantity=50, price=358.38, date=None, company_name="VISA INC CLASS A", security_type="Equity")
+        # self.portfolio.buy(symbol="V", quantity=85, price=366.94, date=None, company_name="VISA INC CLASS A", security_type="Equity")
+        # self.portfolio.buy(symbol="MSFT", quantity=21.3218, price=358.19, date=None, company_name="MICROSOFT CORP", security_type="Equity")
+        # self.portfolio.buy(symbol="UBER", quantity=175, price=69.75, date=None, company_name="UBER TECHNOLOGIES INC", security_type="Equity")
+        # self.portfolio.buy(symbol="RDDT", quantity=120, price=183.43, date=None, company_name="REDDIT INC CLASS A", security_type="Equity")
+        # self.portfolio.buy(symbol="QQQ", quantity=47.1265, price=342.51, date=None, company_name="INVESCO QQQ TRUST", security_type="ETF")
+        # self.portfolio.buy(symbol="SPY", quantity=21.155, price=414.93, date=None, company_name="SPDR S&P 500 ETF", security_type="ETF")
+        # self.portfolio.buy(symbol="VOO", quantity=31.8308, price=383.35, date=None, company_name="VANGUARD S&P 500 ETF", security_type="ETF")
+        # self.portfolio.buy(symbol="VTI", quantity=53.0149, price=214.01, date=None, company_name="VANGUARD TOTAL STOCK M...", security_type="ETF")
+        # self.portfolio.buy(symbol="VOO", quantity=10, price=395.14, date=None, company_name="VANGUARD S&P 500 ETF", security_type="ETF")
+        # self.portfolio.buy(symbol="VTI", quantity=39, price=221.11, date=None, company_name="VANGUARD TOTAL STOCK M...", security_type="ETF")
+        # self.portfolio.buy(symbol="ETH-USD", quantity=1.0745, price=2625.81, date=None, company_name="ETHEREUM", security_type="CRYPTO")
+        # self.portfolio.buy(symbol="ADA-USD", quantity=1492.884029, price=0.34, date=None, company_name="CARDANO", security_type="CRYPTO")
+        # self.portfolio.buy(symbol="BTC-USD", quantity=0.20302474, price=16941.42, date=None, company_name="BITCOIN", security_type="CRYPTO")
+        # self.portfolio.buy(symbol="USDT-USD", quantity=298711.14, price=1.00, date=None, company_name="Tether", security_type="CASH")
+

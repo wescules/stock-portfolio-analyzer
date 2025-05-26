@@ -12,55 +12,62 @@ import uuid
 from zoneinfo import ZoneInfo
 import websocket
 import json
+
+from portfolio import Portfolio
 load_dotenv()
 
 finnhub_key = os.getenv("FINNHUB_API_KEY")
 client = finnhub.Client(api_key=finnhub_key)
-
-
-
 class PortfolioManager:
     def __init__(self, data_dir="data", tx_file="transactions.json", portfolio_cache_file="portfolio_cache.json"):
         self.data_dir = data_dir
         self.tx_file = os.path.join(data_dir, tx_file)
         self.portfolio_cache_file = os.path.join(data_dir, portfolio_cache_file)
         os.makedirs(self.data_dir, exist_ok=True)
-        self.transactions = self._load_transactions()
+        self.portfolio = Portfolio(positions=self.get_positions())
 
-    def _load_transactions(self):
-        if os.path.exists(self.tx_file):
-            return pd.read_json(self.tx_file)
-        cols = ["symbol", "quantity", "cost_basis", "date", "transactionId", "type", 'action']
-        return pd.DataFrame(columns=cols)
-
-    def _save_transactions(self):
-        self.transactions.to_json(self.tx_file, orient="records", date_format="iso")
-        
+    
+    def save_positions(self):
+        with open(self.tx_file, 'w') as f:
+            json.dump(self.portfolio.get_positions(), f)
+            
+    def write_positions(self, positions):
+        with open(self.tx_file, 'w') as f:
+            json.dump(positions, f)
+            
+    def get_positions(self):
+        with open(self.tx_file, 'r') as f:
+            return json.load(f)
+           
     def add_transaction(self, symbol: str, quantity: float, cost_basis: float, date: str = None,
                         company_name: str = None, type: str = None, action: str = None):
-        date = pd.to_datetime(date) if date else pd.Timestamp.now()
-        tx = {"symbol": symbol.upper(), "quantity": quantity, "company_name": company_name,
-              "cost_basis": cost_basis, "date": date, "transactionId": str(uuid.uuid4()), "type": type, "action": action.lower()}
-        self.transactions = pd.concat([self.transactions, pd.DataFrame([tx])], ignore_index=True)
-        self._save_transactions()
-    
+        if action == 'buy':
+            self.portfolio.buy(symbol=symbol, quantity=quantity, price=cost_basis, date=date, company_name=company_name, security_type=type)
+        elif action == 'sell':
+            self.portfolio.sell(symbol=symbol, quantity=quantity, price=cost_basis, date=date)
+        elif action == 'short':
+            self.portfolio.short_sell(symbol=symbol, quantity=quantity, price=cost_basis, date=date, company_name=company_name, security_type=type)
+        elif action == 'cover':
+            self.portfolio.buy_to_cover(symbol=symbol, quantity=quantity, price=cost_basis, date=date)
+        self.save_positions()
+        
     def remove_transaction(self, transaction_id: str):
-        index_to_delete = self.transactions[self.transactions['transactionId'] == transaction_id].index
-        self.transactions.drop(index_to_delete, inplace=True)
-        self._save_transactions()
-
-    def get_transactions(self, symbol: str = None) -> pd.DataFrame:
-        df = self.transactions.copy()
-        if symbol:
-            df = df[df['symbol'] == symbol.upper()]
-        return df
-
-    def get_current_holdings(self) -> dict:
-        holdings = {}
-        for _, tx in self.transactions.iterrows():
-            sym = tx['symbol']
-            holdings[sym] = holdings.get(sym, 0) + tx['quantity']
-        return {s: q for s, q in holdings.items() if q != 0}
+        positions = self.get_positions()
+        new_positions = {}
+        for symbol in positions.keys():
+            transactions = []
+            if len(positions[symbol]) == 1 and positions[symbol][0]['transactionId'] == transaction_id:
+                continue
+            elif len(positions[symbol]) == 1 and positions[symbol][0]['transactionId'] != transaction_id:
+                transactions.append(positions[symbol][0])
+                new_positions[symbol] = transactions
+            else:
+                for txn in positions[symbol]:
+                    if txn['transactionId'] == transaction_id:
+                        continue
+                    transactions.append(txn)
+                new_positions[symbol] = transactions
+        self.write_positions(new_positions)
 
     def _read_cached_json(self, json_path: str) -> pd.DataFrame:
         """Read JSON with potential multi-index headers and flatten columns"""
@@ -106,15 +113,10 @@ class PortfolioManager:
 
     def get_latest_crypto_price(self, ticker):
         print("Getting latest quote from CoinGecko for: " + ticker)
-        grouped_dict = {
-            symbol: group.to_dict(orient='records')
-            for symbol, group in self.transactions.groupby('symbol')
-        }
-        coin_name = grouped_dict.get(ticker)[0]['company_name']
-        response = requests.get(f'https://api.coingecko.com/api/v3/simple/price?ids={coin_name}&vs_currencies=usd', timeout=10)
-        
-        # fallback: read from json file
-        if response.status_code != 200:
+        coin_name = self.portfolio.get_positions()[ticker][0]['company_name']
+        try:
+            response = requests.get(f'https://api.coingecko.com/api/v3/simple/price?ids={coin_name}&vs_currencies=usd', timeout=10)
+        except Exception as e:
             print("CoinGecko has failed. Using fallback and reading from file")
             last_known_price = self._get_price_data(ticker)['Close'].iloc[-1]
             return {'Close': last_known_price}, pd.to_datetime(date.today().isoformat())
@@ -128,10 +130,8 @@ class PortfolioManager:
         return new_data, pd.to_datetime(date.today().isoformat())
     
     def is_crypto_symbol(self, symbol):
-        symbol_info = self.transactions[self.transactions['symbol'] == symbol].index
-        transaction = self.transactions.iloc[symbol_info]
-        
-        return transaction['type'].iloc[0].lower() == 'crypto' or transaction['type'].iloc[0].lower() == 'cash'
+        symbol_transaction = self.portfolio.get_positions()[symbol][0]
+        return symbol_transaction['security_type'].lower() == 'crypto' or symbol_transaction['security_type'].lower() == 'cash'
         
     def get_realtime_quote(self, symbol):
         if self.is_crypto_symbol(symbol):
@@ -139,7 +139,7 @@ class PortfolioManager:
         
         print("Getting latest quote from FinnHub for: " + symbol)
         quote = client.quote(symbol=symbol)
-        
+                
         new_data = {
             'Close': quote.get("c"),
             'High': quote.get("h"),
@@ -153,7 +153,7 @@ class PortfolioManager:
         return new_data, index
 
     def _load_all_price_data(self, period: str = "5y") -> pd.DataFrame:
-        syms = self.get_current_holdings().keys()
+        syms = self.portfolio.get_positions().keys()
         frames = []
         for sym in syms:
             df = self._get_price_data(sym, period)[['Close']].copy()
@@ -168,7 +168,7 @@ class PortfolioManager:
         price_data = self._load_all_price_data(period)
 
         # Cache current holdings
-        holdings = self.get_current_holdings()
+        holdings = self.portfolio.get_positions_and_quantities()
 
         # Only keep columns for current holdings
         price_data = price_data[list(holdings.keys())]
@@ -218,21 +218,17 @@ class PortfolioManager:
         return {}
         
     def get_portfolio_info(self):
-        grouped_dict = {
-            symbol: group.to_dict(orient='records')
-            for symbol, group in self.transactions.groupby('symbol')
-        }
-
-        response = []
-
         total_value = 0
-        total_day_gain = 0
-        total_cost_basis = 0
+        realtime_prices = {}
+        previous_close_price = {}
         type_breakdown = {}
-
-        for symbol, purchases in grouped_dict.items():
+        positions = self.get_positions()
+        self.portfolio.set_positions(positions)
+        for symbol in positions:
+            purchases = positions[symbol]
             live_price, live_date = self.get_realtime_quote(symbol)
             price = live_price['Close']
+            realtime_prices[symbol] = price
 
             if self.is_crypto_symbol(symbol):
                 previous_close = self._get_price_data(symbol)['Close'].copy()
@@ -240,78 +236,23 @@ class PortfolioManager:
             else:
                 prev_close = live_price['previous_close_price']
 
+            previous_close_price[symbol] = float(prev_close)
+            
             total_quantity = sum(p["quantity"] for p in purchases)
             value = round(price * total_quantity, 2)
-
-            day_gain = round((price - prev_close) * total_quantity, 2) if prev_close else 0
-            day_gain_percent = round((price - prev_close) / prev_close * 100, 2) if prev_close else 0
-
             total_value += value
-            total_day_gain += day_gain
-
-            purchases_detail = []
-            for p in purchases:
-                qty = p["quantity"]
-                basis = p["cost_basis"]
-                if p["action"] == 'buy':
-                    gain = (price - basis) * qty
-                    market_value = price * qty
-                    gain_percent = ((price - basis) / basis * 100) if basis else 0
-                elif p['action'] == 'short':
-                    gain = (basis - price) * qty
-                    market_value = price * -qty
-                    gain_percent = ((basis - price) / basis * 100) if basis else 0
-                total_cost_basis += basis * qty
-
-                purchases_detail.append({
-                    "transactionId": p["transactionId"],
-                    "date": str(p["date"]),
-                    "purchasePrice": basis,
-                    "quantity": qty,
-                    "value": round(market_value, 2),
-                    "totalGain": round(gain, 2),
-                    "totalGainPercent": round(gain_percent, 2),
-                    "action": p["action"],
-                })
-
-            category = purchases[0]['type'].lower()
+            
+            category = purchases[0]['security_type'].lower()
             type_breakdown[category] = type_breakdown.get(category, 0) + value
-
-            response.append({
-                "id": symbol.lower(),
-                "symbol": symbol,
-                "name": purchases[0]['company_name'],
-                "price": price,
-                "quantity": round(total_quantity, 4),
-                "dayGain": round(day_gain, 2),
-                "dayGainPercent": round(day_gain_percent, 2),
-                "value": value,
-                "purchases": purchases_detail
-            })
-
-        total_gain = total_value - total_cost_basis
-        total_gain_percent = (total_gain / total_cost_basis * 100) if total_cost_basis else 0
-
-        yesterday_value = total_value - total_day_gain
-        day_percent = (total_day_gain / yesterday_value * 100) if yesterday_value else 0
-
-        timestamp = pd.Timestamp.now(tz='Asia/Shanghai').strftime("%b %d, %I:%M:%S %p UTC+8")
-
+            
+        self.portfolio.set_realtime_prices(current_prices=realtime_prices, previous_closing_prices=previous_close_price)
+    
         portfolio_highlights = [
             {"name": k, "percent": round(v / total_value * 100, 1), "value": round(v, 2)}
             for k, v in type_breakdown.items()
         ]
-        
-        portfolio_info = {
-            "balance": round(total_value, 2),
-            "dayChange": round(total_day_gain, 2),
-            "dayPercent": round(day_percent, 2),
-            "totalGain": round(total_gain, 2),
-            "totalGainPercent": round(total_gain_percent, 2),
-            "timestamp": timestamp,
-            "portfolioHighlights": portfolio_highlights,
-            "positions": response
-        }
+        portfolio_info = self.portfolio.get_detailed_portfolio_report()
+        portfolio_info['portfolioHighlights'] = portfolio_highlights
 
         with open(self.portfolio_cache_file, 'w') as f:
             json.dump(portfolio_info, f)
@@ -339,7 +280,9 @@ if __name__ == '__main__':
     # print(manager.transaction_pnl(symbol="TSLA"))
     # print(manager.compute_equity_history())
     
-    # print(manager.get_portfolio_info())
+    
+
+    print(manager.get_portfolio_info())
 
 
 
