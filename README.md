@@ -24,6 +24,7 @@ I'm sick of schwab, google/yahoo finance, and other portfolio analyzers. They su
 * ✅ Use **live & extended-hours prices**
 * ✅ Track average cost, P/L %, and net worth over time
 * [ ] Import from CSV (optional)
+* [ ] Implement short selling
 
 #### 📦 Tools:
 
@@ -63,6 +64,7 @@ I'm sick of schwab, google/yahoo finance, and other portfolio analyzers. They su
 * [ ] Earnings calendar (per holding)
 * [ ] News feed per stock
 * [ ] Highlight important events: splits, dividend dates, earnings beats/misses
+* [ ] Scrape SEC filings for form 10Q, 4, 144 for anolmalies in insider buys
 
 #### 📦 APIs:
 
