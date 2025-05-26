@@ -13,11 +13,12 @@ def add_transaction():
     company_name = data.get("company_name")
     type = data.get("type")
     date = data.get("date", None)
+    action = data.get("action")
 
-    if not all([symbol, quantity, cost_basis, company_name, type]):
+    if not all([symbol, quantity, cost_basis, company_name, type, action]):
         return jsonify({"error": "Missing required transaction data"}), 400
 
-    manager.add_transaction(symbol, quantity, cost_basis, date, company_name, type)
+    manager.add_transaction(symbol, quantity, cost_basis, date, company_name, type, action)
     return jsonify({"message": f"Transaction added for {symbol.upper()}."})
 
 

@@ -297,7 +297,8 @@ function renderInvestments() {
       // Purchase History Header
       body.innerHTML += `
                         <div class="grid grid-cols-12 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                            <div class="col-span-3">Purchase Date</div>
+                            <div class="col-span-3"></div>
+                            <div class="col-span-1 text-right">Action</div>
                             <div class="col-span-2 text-right">Purchase Price</div>
                             <div class="col-span-2 text-right">Quantity</div>
                             <div class="col-span-3 text-right">Total Gain</div>
@@ -311,14 +312,16 @@ function renderInvestments() {
         purchaseRow.className =
           "grid grid-cols-12 items-center py-2 text-sm text-gray-800";
         purchaseRow.innerHTML = `
-                            <div class="col-span-3">${purchase.date}</div>
+                            <div class="col-span-3"></div>
+                            <div class="col-span-1 text-right">${purchase.action}</div>
+
                             <div class="col-span-2 text-right">${formatCurrency(
                               purchase.purchasePrice
                             )}</div>
                             <div class="col-span-2 text-right">${purchase.quantity.toFixed(
                               4
                             )}</div>
-                            <div class="col-span-3 text-right font-medium ${getChangeStyle(
+                            <div class="col-span-2 text-right font-medium ${getChangeStyle(
                               purchase.totalGain
                             )}">
                                 ${
@@ -511,6 +514,7 @@ const newTransactionForm = document.getElementById("new-transaction-form");
 const newTransactionSymbolInput = document.getElementById(
   "new-transaction-symbol"
 );
+const newTransactionAction = document.getElementById("new-transaction-action");
 const symbolSuggestionsContainer =
   document.getElementById("symbol-suggestions");
 
@@ -519,8 +523,6 @@ const symbolSuggestionsContainer =
  */
 function openNewTransactionModal() {
   newTransactionModal.classList.remove("hidden");
-  // Set today's date as default for the date input
-  document.getElementById("new-transaction-date").valueAsDate = new Date();
 }
 
 /**
@@ -627,7 +629,6 @@ function submitNewTransaction(event) {
   event.preventDefault(); // Prevent default form submission
 
   const symbol = newTransactionSymbolInput.value.trim().toUpperCase();
-  const date = document.getElementById("new-transaction-date").value;
   const costBasis = parseFloat(
     document.getElementById("new-transaction-cost-basis").value
   );
@@ -635,9 +636,10 @@ function submitNewTransaction(event) {
     document.getElementById("new-transaction-quantity").value
   );
 
+  const action = document.getElementById('new-transaction-action').value
+
   if (
     !symbol ||
-    !date ||
     isNaN(costBasis) ||
     isNaN(quantity) ||
     quantity <= 0 ||
@@ -686,11 +688,11 @@ function submitNewTransaction(event) {
   }
 
   const newPurchase = {
-    date: date,
     purchasePrice: costBasis,
     quantity: quantity,
     companyName: companyName,
     symbol: actualSymbol,
+    action: newTransactionAction,
   };
 
   investmentToUpdate.purchases.push(newPurchase);
@@ -723,12 +725,12 @@ function submitNewTransaction(event) {
       // Add any necessary authorization headers here
     },
     body: JSON.stringify({
-      date: date,
       cost_basis: costBasis,
       quantity: quantity,
       company_name: companyName,
       symbol: actualSymbol,
       type: symbolType,
+      action: action,
     }),
   })
     .then((response) => {

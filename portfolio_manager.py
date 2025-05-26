@@ -30,19 +30,20 @@ class PortfolioManager:
     def _load_transactions(self):
         if os.path.exists(self.tx_file):
             return pd.read_json(self.tx_file)
-        cols = ["symbol", "quantity", "cost_basis", "date", "transactionId", "type"]
+        cols = ["symbol", "quantity", "cost_basis", "date", "transactionId", "type", 'action']
         return pd.DataFrame(columns=cols)
 
     def _save_transactions(self):
         self.transactions.to_json(self.tx_file, orient="records", date_format="iso")
-
-    def add_transaction(self, symbol: str, quantity: float, cost_basis: float, date: str = None, company_name: str = None, type: str = None):
+        
+    def add_transaction(self, symbol: str, quantity: float, cost_basis: float, date: str = None,
+                        company_name: str = None, type: str = None, action: str = None):
         date = pd.to_datetime(date) if date else pd.Timestamp.now()
         tx = {"symbol": symbol.upper(), "quantity": quantity, "company_name": company_name,
-              "cost_basis": cost_basis, "date": date, "transactionId": str(uuid.uuid4()), "type": type}
+              "cost_basis": cost_basis, "date": date, "transactionId": str(uuid.uuid4()), "type": type, "action": action.lower()}
         self.transactions = pd.concat([self.transactions, pd.DataFrame([tx])], ignore_index=True)
         self._save_transactions()
-        
+    
     def remove_transaction(self, transaction_id: str):
         index_to_delete = self.transactions[self.transactions['transactionId'] == transaction_id].index
         self.transactions.drop(index_to_delete, inplace=True)
@@ -205,63 +206,6 @@ class PortfolioManager:
 
         return equity_history
 
-    def transaction_pnl(self, symbol: str = None) -> pd.DataFrame:
-        txs = self.get_transactions(symbol)
-        if txs.empty:
-            return pd.DataFrame()
-        pnl = []
-        current_prices = {}
-        for _, tx in txs.iterrows():
-            sym = tx['symbol']
-            if sym not in current_prices:
-                current_prices[sym] = self._get_price_data(sym)[['Close']].iloc[-1]
-            price = current_prices[sym]
-            qty = tx['quantity']
-            cost = tx['cost_basis'] * qty
-            value = float(price) * qty
-            pnl.append({
-                'symbol': sym,
-                'date': tx['date'],
-                'quantity': qty,
-                'cost_basis': tx['cost_basis'],
-                'current_price': price,
-                'pnl': value - cost,
-                'return_pct': (value - cost) / cost * 100 if cost else None
-            })
-        return pd.DataFrame(pnl)
-
-    def symbol_pnl(self, symbol: str) -> dict:
-        txs = self.get_transactions(symbol)
-        if txs.empty:
-            return {}
-        total_qty = txs['quantity'].sum()
-        total_cost = (txs['quantity'] * txs['cost_basis']).sum()
-        price = self._get_price_data(symbol)[['Close']].iloc[-1]
-
-        market_value = float(price.iloc[0]) * total_qty
-        pnl = market_value - total_cost
-        return {
-            'symbol': symbol,
-            'quantity': total_qty,
-            'cost_basis': total_cost,
-            'market_value': market_value,
-            'pnl': pnl,
-            'return_pct': pnl / total_cost * 100 if total_cost else None
-        }
-
-    def portfolio_pnl(self) -> dict:
-        summary = {'total_cost': 0, 'total_value': 0}
-        for sym in self.get_current_holdings().keys():
-            stats = self.symbol_pnl(sym)
-            summary['total_cost'] += stats.get('cost_basis', 0)
-            summary['total_value'] += stats.get('market_value', 0)
-        total_pnl = summary['total_value'] - summary['total_cost']
-        summary.update({
-            'total_pnl': total_pnl,
-            'return_pct': total_pnl / summary['total_cost'] * 100 if summary['total_cost'] else None
-        })
-        return summary
-
     def is_past_12_in_china(self):
         now = pd.Timestamp.now()
         ny_time = datetime.now(ZoneInfo("America/New_York"))
@@ -309,9 +253,14 @@ class PortfolioManager:
             for p in purchases:
                 qty = p["quantity"]
                 basis = p["cost_basis"]
-                gain = (price - basis) * qty
-                gain_percent = ((price - basis) / basis * 100) if basis else 0
-                market_value = price * qty
+                if p["action"] == 'buy':
+                    gain = (price - basis) * qty
+                    market_value = price * qty
+                    gain_percent = ((price - basis) / basis * 100) if basis else 0
+                elif p['action'] == 'short':
+                    gain = (basis - price) * qty
+                    market_value = price * -qty
+                    gain_percent = ((basis - price) / basis * 100) if basis else 0
                 total_cost_basis += basis * qty
 
                 purchases_detail.append({
@@ -321,7 +270,8 @@ class PortfolioManager:
                     "quantity": qty,
                     "value": round(market_value, 2),
                     "totalGain": round(gain, 2),
-                    "totalGainPercent": round(gain_percent, 2)
+                    "totalGainPercent": round(gain_percent, 2),
+                    "action": p["action"],
                 })
 
             category = purchases[0]['type'].lower()
